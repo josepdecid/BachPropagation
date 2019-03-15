@@ -21,3 +21,14 @@ To activate the python shell, run the following command, which will spawn a new 
 ````bash
 $ pipenv shell
 ````
+
+## Download data
+
+First of all, to work with this project, we are going to need a Environment variable pointing to our root.
+E.g. if our project is at /home/projects/bachpropagation, just add to your`favorite bash profile:
+
+```bash
+export BACHPROPAGATION_ROOT_PATH=/home/projects/bachpropagation
+```
+
+Once downloaded, run the script at `src/dataset` called `crawler.py`, which will download all MIDI files into `res/dataset/raw`.
