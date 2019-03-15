@@ -31,4 +31,6 @@ E.g. if our project is at /home/projects/bachpropagation, just add to your`favor
 export BACHPROPAGATION_ROOT_PATH=/home/projects/bachpropagation
 ```
 
-Once downloaded, run the script at `src/dataset` called `crawler.py`, which will download all MIDI files into `res/dataset/raw`.
+To download the raw midi files, run the script at `src/dataset` called `crawler.py`,
+which will download all MIDI files into `res/dataset/raw`. Then, to make them easier to process, we will convert those
+into CSV files by running `src/dataset/parser.py` that will write the processed files into `res/dataset/processed`.
