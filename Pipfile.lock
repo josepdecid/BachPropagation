@@ -1,11 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "308740e2ba3b3e4897f13a62afa050c38cdb918f0d995889b9a702b231a3129d"
+            "sha256": "d8648145cccdadf2c6f5037099c4d2805ed60b0002678070e1aa1773f540939d"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.6"
+            "python_version": "3.7"
         },
         "sources": [
             {
@@ -169,11 +169,11 @@
         },
         "py-midicsv": {
             "hashes": [
-                "sha256:1c0c888edc30c894f7e4c39b53fe44415f0b4ad6ea0c7b2c66a2b87290dc104b",
-                "sha256:c703c82bb7a671efd754f84dd4c76937cbfcd00dc21d3785d1ce14da826f63cf"
+                "sha256:20d894bb9cc3f405b4950613aac850c312d98d1595bc50b96ec2bd6c7c43f17b",
+                "sha256:7547ef56db5e4c6781e8f7b1cddcb97d3403bbf0278ece5837c5bd69d6f3f875"
             ],
             "index": "pypi",
-            "version": "==1.8.3"
+            "version": "==1.8.2"
         },
         "pyasn1": {
             "hashes": [
