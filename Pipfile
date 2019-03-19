@@ -6,8 +6,8 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-scrapy = "*"
 py-midicsv = "*"
+beautifulsoup4 = "*"
 
 [requires]
 python_version = "3.7"
