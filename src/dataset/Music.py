@@ -3,10 +3,6 @@ from typing import List, Tuple
 
 class NoteData(object):
     def __init__(self, data: Tuple[int, int, int, int]):
-        """
-        Creates Note Data object which has Note timings, Encoding and Velocity.
-        :param data: (Note_start, Note_end, Note_code, Velocity)
-        """
         self.note_start, self.note_end, self.note, self.velocity = data
 
     @property
@@ -30,6 +26,7 @@ class Track:
 
     def get_note_data(self, idx: int) -> NoteData:
         return self.notes_data[idx]
+
 
 class Song:
     def __init__(self, data: List[Track]):
