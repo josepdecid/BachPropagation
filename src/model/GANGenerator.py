@@ -1,6 +1,8 @@
+import torch
 from torch import nn
+from torch.autograd import Variable
 
-from model.utils.RNN import RNN
+from model.RNN import RNN
 
 
 class GANGenerator(nn.Module):
@@ -20,3 +22,11 @@ class GANGenerator(nn.Module):
         x = self.rnn(x)
         x = self.dense(x)
         return x
+
+    @staticmethod
+    def noise(size):
+        """
+        Generates a 1-d vector of gaussian sampled random values.
+        :param size: Number of features (dimension) of the data.
+        """
+        return Variable(torch.randn(size, 100))
