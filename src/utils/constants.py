@@ -8,3 +8,6 @@ DATASET_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/dataset/processed'
 RAW_DATASET_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/dataset/raw'
 
 PPath = lambda p: Path(PROJECT_PATH + p)
+
+EPOCHS = 100
+BATCH_SIZE = 64
