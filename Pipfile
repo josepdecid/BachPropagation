@@ -9,6 +9,8 @@ verify_ssl = true
 py-midicsv = "*"
 beautifulsoup4 = "*"
 tqdm = "*"
+torch = "*"
+torchvision = "*"
 
 [requires]
 python_version = "3.7"

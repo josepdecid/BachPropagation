@@ -1,0 +1,6 @@
+def generator():
+    """
+
+    :return:
+    """
+    pass

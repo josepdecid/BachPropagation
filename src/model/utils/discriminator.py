@@ -1,0 +1,6 @@
+def discriminator():
+    """
+
+    :return:
+    """
+    pass

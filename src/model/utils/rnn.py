@@ -1,0 +1,6 @@
+def rnn():
+    """
+
+    :return:
+    """
+    pass
