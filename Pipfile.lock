@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "af2313a3c800d210a20a66289736ca83dcc98ff5a971e952c951ced8565b6643"
+            "sha256": "65cea659336aa3b6fceaa6116750a0fc2d002bbfe6e636efd6a2d516c0445c13"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -27,11 +27,11 @@
         },
         "py-midicsv": {
             "hashes": [
-                "sha256:1c0c888edc30c894f7e4c39b53fe44415f0b4ad6ea0c7b2c66a2b87290dc104b",
-                "sha256:c703c82bb7a671efd754f84dd4c76937cbfcd00dc21d3785d1ce14da826f63cf"
+                "sha256:520a04ede2f8dc894489f24d18193eb75511dd2eff4a4a709dfce1f8d47e3d8b",
+                "sha256:abeb3add2aafe289dfd1b8e24793980989f795ca8ba2dcf59dfe5034506b358d"
             ],
             "index": "pypi",
-            "version": "==1.8.3"
+            "version": "==1.8.4"
         },
         "soupsieve": {
             "hashes": [
@@ -39,6 +39,14 @@
                 "sha256:eaed742b48b1f3e2d45ba6f79401b2ed5dc33b2123dfe216adb90d4bfa0ade26"
             ],
             "version": "==1.8"
+        },
+        "tqdm": {
+            "hashes": [
+                "sha256:d385c95361699e5cf7622485d9b9eae2d4864b21cd5a2374a9c381ffed701021",
+                "sha256:e22977e3ebe961f72362f6ddfb9197cc531c9737aaf5f607ef09740c849ecd05"
+            ],
+            "index": "pypi",
+            "version": "==4.31.1"
         }
     },
     "develop": {}

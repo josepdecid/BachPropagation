@@ -2,8 +2,14 @@ from typing import List, Tuple
 
 
 class NoteData(object):
-    def __init__(self, data: Tuple[int, int, int, int]):
-        self.note_start, self.note_end, self.note, self.velocity = data
+    def __init__(self, start: int, end: int, note: int, velocity: int):
+        self.note_start = start
+        self.note_end = end
+        self.note = note
+        self.velocity = velocity
+
+    def __str__(self):
+        return f'NoteData({self.note_start}, {self.note_end}, {self.note}, {self.velocity})'
 
     @property
     def norm_vel(self) -> float:
