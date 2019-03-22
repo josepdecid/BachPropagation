@@ -6,7 +6,7 @@ from typing import List, Dict
 from py_midicsv import midi_to_csv
 
 from dataset.Music import Song, Track, NoteData
-from utils.constants import RAW_DATASET_PATH
+from utils.constants import RAW_DATASET_PATH, DATASET_PATH
 
 
 def csv_cleaner(data: List[str]) -> Song:
@@ -26,22 +26,24 @@ def csv_cleaner(data: List[str]) -> Song:
     notes_data = []
     current_notes: Dict[int, NoteData] = {}
 
-    for row in data[idx:]:
+    for idx, row in enumerate(data[idx:]):
         row = row.strip().split(', ')
         # Note information events
         if len(row) == 6:
             track, note_time, event, channel, note, velocity = row
             # Note ends event (even if off or no velocity. We add missing end attribute and push to list of data
-            if event == 'Note_off_c' or velocity == '0':
-                current_notes[note].note_end = int(note_time)
-                notes_data.append(current_notes[note])
-                del current_notes[note]
+            if event == 'Note_off_c' or (event == 'Note_on_c' and velocity == '0'):
+                # TODO: Review strange missing starts
+                if note in current_notes:
+                    current_notes[note].note_end = int(note_time)
+                    notes_data.append(current_notes[note])
+                    del current_notes[note]
             # Note starts event. Gets start_time, note and velocity information.
             elif event == 'Note_on_c':
                 current_notes[note] = NoteData(int(note_time), 0, int(note), int(velocity))
         else:
             # Push and start new track if end of track reached
-            if row[2] == 'End_track':
+            if row[2] == 'End_track' and len(notes_data) != 0:
                 tracks.append(Track(notes_data))
                 notes_data = []
 
@@ -49,11 +51,18 @@ def csv_cleaner(data: List[str]) -> Song:
 
 
 def csv_to_series(song: Song, time_step=10) -> List[List[int]]:
+    """
+
+    :param song:
+    :param time_step:
+    :return:
+    """
+    # Index of current treated element for each track.
     track_time_indices = [0] * song.number_tracks
 
     # Get max time of last Note data of all tracks.
     max_time = song.max_time
-    series_data = [[]] * (max_time // time_step)
+    series_data = [[] for _ in range(max_time // time_step)]
 
     ts = 0
     while ts < max_time:
@@ -79,3 +88,9 @@ if __name__ == '__main__':
 
     logging.info('Converting information to time series...')
     time_series = list(map(csv_to_series, tqdm(csv_preprocessed, ncols=150)))
+
+    for path, time_steps in zip(files, time_series):
+        file = path.split('/')[-1][:-4] + '.txt'
+        with open(f'{DATASET_PATH}/{file}', mode='w') as f:
+            for ts in time_steps:
+                f.write('\t'.join(map(str, ts)) + '\n')
