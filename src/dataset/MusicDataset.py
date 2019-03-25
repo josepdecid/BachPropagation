@@ -3,7 +3,6 @@ from typing import List
 
 from torch.utils.data import Dataset, DataLoader
 
-from utils.constants import PPath
 from utils.tensors import use_cuda
 from utils.typings import File, IntTensor
 
@@ -11,7 +10,7 @@ from utils.typings import File, IntTensor
 class MusicDataset(Dataset):
     def __init__(self):
         self.songs = []
-        for path in glob.glob(PPath(f'/res/datasets/atis/processed/*.txt')):
+        for path in glob.glob('/res/dataset/processed/*.txt'):
             with open(path, mode='r') as f:
                 self.songs.append(MusicDataset._read_song(f))
 

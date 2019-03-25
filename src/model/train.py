@@ -100,6 +100,9 @@ def train(model: GANModel, epochs: int, train_loader: DataLoader, test_loader: D
 if __name__ == '__main__':
     def main():
         model = GANModel()
+        model.initialize_generator(100, torch.optim.Adam)
+        model.initialize_discriminator(100, torch.optim.Adam)
+
         train_songs = MusicDataset()
         test_songs = MusicDataset()
 
