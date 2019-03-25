@@ -1,5 +1,7 @@
 from torch import nn
 
+from model.RNN import RNN
+
 
 class GANDiscriminator(nn.Module):
     def __init__(self, hid_dim: int):
@@ -10,6 +12,9 @@ class GANDiscriminator(nn.Module):
         :param hid_dim: The number of features in the hidden state *h* of the RNN.
         """
         super(GANDiscriminator, self).__init__()
+
+        # TODO: Just to not explode
+        self.rnn = RNN(architecture='GRU', inp_dim=100, hid_dim=hid_dim, layers=2, bidirectional=False)
 
     def forward(self, x):
         pass

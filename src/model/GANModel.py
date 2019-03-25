@@ -13,16 +13,16 @@ class GANModel:
 
     def initialize_generator(self, hid_dim: int, optimizer: Optimizer):
         self.generator = GANGenerator(hid_dim=hid_dim)
-        self.g_optimizer = optimizer(self.generator)
+        self.g_optimizer = optimizer(self.generator.parameters())
 
     def initialize_discriminator(self, hid_dim: int, optimizer: Optimizer):
         self.discriminator = GANDiscriminator(hid_dim=hid_dim)
-        self.d_optimizer = optimizer(self.discriminator)
+        self.d_optimizer = optimizer(self.discriminator.parameters())
 
     def train_mode(self):
         self.generator.train()
         self.discriminator.train()
 
     def test_mode(self):
-        self.generator.test()
-        self.discriminator.test()
+        self.generator.eval()
+        self.discriminator.eval()
