@@ -4,8 +4,9 @@ from typing import List
 from torch.utils.data import Dataset, DataLoader
 
 from utils.tensors import use_cuda
-from utils.typings import File, IntTensor
+from utils.typings import File, FloatTensor
 from utils.constants import DATASET_PATH
+
 
 class MusicDataset(Dataset):
     def __init__(self):
@@ -17,7 +18,7 @@ class MusicDataset(Dataset):
 
     def __getitem__(self, index):
         x = self.songs[index]
-        return IntTensor(x)
+        return FloatTensor(x)
 
     def __len__(self):
         return len(self.songs)
@@ -28,8 +29,8 @@ class MusicDataset(Dataset):
 
     def _apply_padding(self):
         for i in range(len(self.songs)):
-            if len(self.songs[i])<self.longest_song:
-                self.songs[i] = self.songs[i] + [0.0]*(self.longest_song - len(self.songs[i]))
+            if len(self.songs[i]) < self.longest_song:
+                self.songs[i] = self.songs[i] + [0.0] * (self.longest_song - len(self.songs[i]))
 
     def _update_longest_song(self, length: int):
         self.longest_song = max(length, self.longest_song)

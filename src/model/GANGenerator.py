@@ -32,9 +32,9 @@ class GANGenerator(nn.Module):
         return x
 
     @staticmethod
-    def noise(size):
+    def noise(batch_size, input_size):
         """
         Generates a 1-d vector of gaussian sampled random values.
         :param size: Number of features (dimension) of the data.
         """
-        return Variable(torch.randn(size, 100))
+        return Variable(torch.randn(batch_size, input_size))

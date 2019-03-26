@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from utils.constants import MAX_POLYPHONY
 
@@ -25,6 +26,7 @@ class GANDiscriminator(nn.Module):
                                out_features=1)
 
     def forward(self, x):
-        x = self.rnn(x)
+        x, _ = self.rnn(x)
         x = self.dense(x)
+        x = torch.sigmoid(x)
         return x

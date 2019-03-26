@@ -11,7 +11,7 @@ RESULTS_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/results/'
 PPath = lambda p: Path(PROJECT_PATH + p)
 
 EPOCHS = 100
-BATCH_SIZE = 64
+BATCH_SIZE = 1
 MAX_POLYPHONY = 1
 
 NOTE_TO_FREQ = {21: 27.50,

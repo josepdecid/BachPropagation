@@ -9,6 +9,8 @@ from model.GANGenerator import GANGenerator
 from utils.constants import BATCH_SIZE, MAX_POLYPHONY
 from utils.typings import Optimizer, Criterion, NNet
 
+from tqdm import tqdm
+
 
 def train_generator(optimizer: Optimizer, criterion: Criterion, discriminator: NNet, fake_data):
     # Reset gradients
@@ -18,7 +20,7 @@ def train_generator(optimizer: Optimizer, criterion: Criterion, discriminator: N
     prediction = discriminator(fake_data)
 
     # Calculate gradients w.r.t parameters and backpropagate
-    loss = criterion(prediction, torch.Variable(torch.ones(fake_data.size(0), 1)))
+    loss = criterion(prediction, Variable(torch.ones(fake_data.size(0), 1)))
     loss.backward()
 
     # Update parameters
@@ -33,7 +35,7 @@ def train_discriminator(optimizer: Optimizer, criterion: Criterion, discriminato
 
         # Calculate gradients w.r.t parameters and backpropagate
         n = real_data.size(0)
-        target = torch.Variable(torch.zeros(n)) if fake else torch.Variable(torch.ones(n))
+        target = Variable(torch.zeros(n)) if fake else Variable(torch.ones(n))
         loss = criterion(prediction, target)
         loss.backward()
 
@@ -55,13 +57,16 @@ def train_discriminator(optimizer: Optimizer, criterion: Criterion, discriminato
 
 def train_epoch(model: GANModel, criterion: Criterion, loader: DataLoader) -> float:
     model.train_mode()
-    for batch in loader:
-        n = batch.size(0)
+    for batch in tqdm(loader, ncols=100):
+        batch_size = batch.size(0)
+        input_dim = batch.size(1)
+
         # Train Discriminator
         real_data = Variable(batch)
-        real_data = real_data.view(real_data.shape[1], real_data.shape[0], MAX_POLYPHONY)
-        noise_data = GANGenerator.noise(n)
-        noise_data = noise_data.view(noise_data.shape[1], noise_data.shape[0], MAX_POLYPHONY)
+        real_data = real_data.view(input_dim, batch_size, MAX_POLYPHONY)
+
+        noise_data = GANGenerator.noise(batch_size, input_dim)
+        noise_data = noise_data.view(input_dim, batch_size, MAX_POLYPHONY)
         fake_data = model.generator(noise_data).detach()
 
         d_loss = train_discriminator(optimizer=model.d_optimizer,
@@ -71,7 +76,8 @@ def train_epoch(model: GANModel, criterion: Criterion, loader: DataLoader) -> fl
                                      fake_data=fake_data)
 
         # Train Generator
-        noise_data = GANGenerator.noise(n)
+        noise_data = GANGenerator.noise(batch_size, input_dim)
+        noise_data = noise_data.view(input_dim, batch_size, MAX_POLYPHONY)
         fake_data = model.generator(noise_data)
 
         g_loss = train_generator(optimizer=model.g_optimizer,
@@ -107,6 +113,7 @@ if __name__ == '__main__':
         train_songs = MusicDataset()
         train_songs._apply_padding()
 
+        # TODO: Test necessary?
         test_songs = MusicDataset()
         test_songs._apply_padding()
 
