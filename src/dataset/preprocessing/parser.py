@@ -61,16 +61,23 @@ def csv_to_series(song: Song, time_step=10) -> List[List[int]]:
     track_time_indices = [0] * song.number_tracks
 
     # Get max time of last Note data of all tracks.
-    max_time = song.max_time
-    series_data = [[] for _ in range(max_time // time_step)]
+    max_time = song.max_time // time_step
+    series_data = [[] for _ in range(max_time)]
 
-    ts = 0
-    while ts < max_time:
+    time_idx = 0
+    while time_idx < max_time:
         for track_idx, track_time_idx in enumerate(track_time_indices):
+            # Continue if track already finished
+            if track_time_indices[track_idx] >= song.get_track(track_idx).len_track:
+                continue
             note_data = song.get_track(track_idx).get_note_data(track_time_idx)
-            if note_data.is_playing(ts):
-                series_data[(ts // time_step) - 1].append(note_data.note)
-        ts += time_step
+            # Add note to current time step if it's being played
+            if note_data.is_playing(time_idx * time_step):
+                series_data[time_idx].append(note_data.note)
+            # Check if note won't be played on next time step
+            if not note_data.is_playing((time_idx + 1) * time_step):
+                track_time_indices[track_idx] += 1
+        time_idx += 1
 
     return series_data
 
@@ -84,8 +91,10 @@ def series_to_frequencies(series: List[List[int]]) -> List[List[int]]:
             frequency_series.append([NOTE_TO_FREQ[x] for x in s])
     return frequency_series
 
-def leave_one_track(frequency_series:List[List[int]])-> List[int]:
-    return [ s[0] for s in frequency_series  ]
+
+def leave_one_track(frequency_series: List[List[int]]) -> List[int]:
+    return [s[0] for s in frequency_series]
+
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)

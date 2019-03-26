@@ -33,6 +33,10 @@ class Track:
     def get_note_data(self, idx: int) -> NoteData:
         return self.notes_data[idx]
 
+    @property
+    def len_track(self):
+        return len(self.notes_data)
+
 
 class Song:
     def __init__(self, data: List[Track]):
