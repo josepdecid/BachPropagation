@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.autograd import Variable
+from utils.constants import MAX_POLYPHONY
 
 from model.RNN import RNN
 
@@ -15,11 +16,11 @@ class GANGenerator(nn.Module):
         """
         super(GANGenerator, self).__init__()
 
-        self.rnn = RNN(architecture='GRU', inp_dim=100, hid_dim=hid_dim, layers=2, bidirectional=False)
+        self.rnn = RNN(architecture='GRU', inp_dim=MAX_POLYPHONY, hid_dim=hid_dim, layers=2, bidirectional=False)
         self.dense = nn.Linear(in_features=hid_dim, out_features=hid_dim)
 
     def forward(self, x):
-        x = self.rnn(x)
+        x, _ = self.rnn(x)
         x = self.dense(x)
         return x
 

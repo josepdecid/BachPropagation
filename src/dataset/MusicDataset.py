@@ -5,14 +5,15 @@ from torch.utils.data import Dataset, DataLoader
 
 from utils.tensors import use_cuda
 from utils.typings import File, IntTensor
-
+from utils.constants import DATASET_PATH
 
 class MusicDataset(Dataset):
     def __init__(self):
         self.songs = []
-        for path in glob.glob('/res/dataset/processed/*.txt'):
+        self.longest_song = 0
+        for path in glob.glob(f'{DATASET_PATH}/*.txt'):
             with open(path, mode='r') as f:
-                self.songs.append(MusicDataset._read_song(f))
+                self.songs.append(self._read_song(f))
 
     def __getitem__(self, index):
         x = self.songs[index]
@@ -26,8 +27,14 @@ class MusicDataset(Dataset):
         return DataLoader(self, batch_size=batch_size, shuffle=shuffle, **kwargs)
 
     def _apply_padding(self):
-        pass
+        for i in range(len(self.songs)):
+            if len(self.songs[i])<self.longest_song:
+                self.songs[i] = self.songs[i] + [0.0]*(self.longest_song - len(self.songs[i]))
 
-    @staticmethod
-    def _read_song(f: File) -> List[int]:
-        return [int(l) for l in f.readlines()]
+    def _update_longest_song(self, length: int):
+        self.longest_song = max(length, self.longest_song)
+
+    def _read_song(self, f: File) -> List[float]:
+        lines = f.readlines()
+        self._update_longest_song(len(lines))
+        return [float(l) for l in lines]

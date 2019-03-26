@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from dataset.MusicDataset import MusicDataset
 from model.GANModel import GANModel
 from model.GANGenerator import GANGenerator
-from utils.constants import BATCH_SIZE
+from utils.constants import BATCH_SIZE, MAX_POLYPHONY
 from utils.typings import Optimizer, Criterion, NNet
 
 
@@ -57,10 +57,11 @@ def train_epoch(model: GANModel, criterion: Criterion, loader: DataLoader) -> fl
     model.train_mode()
     for batch in loader:
         n = batch.size(0)
-
         # Train Discriminator
         real_data = Variable(batch)
+        real_data = real_data.view(real_data.shape[1], real_data.shape[0], MAX_POLYPHONY)
         noise_data = GANGenerator.noise(n)
+        noise_data = noise_data.view(noise_data.shape[1], noise_data.shape[0], MAX_POLYPHONY)
         fake_data = model.generator(noise_data).detach()
 
         d_loss = train_discriminator(optimizer=model.d_optimizer,
@@ -104,11 +105,15 @@ if __name__ == '__main__':
         model.initialize_discriminator(100, torch.optim.Adam)
 
         train_songs = MusicDataset()
+        train_songs._apply_padding()
+
         test_songs = MusicDataset()
+        test_songs._apply_padding()
 
         train(model=model,
               epochs=100,
               train_loader=train_songs.get_dataloader(BATCH_SIZE),
               test_loader=test_songs.get_dataloader(BATCH_SIZE))
+
 
     main()

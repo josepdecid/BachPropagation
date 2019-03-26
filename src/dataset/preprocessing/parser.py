@@ -6,7 +6,7 @@ from typing import List, Dict
 from py_midicsv import midi_to_csv
 
 from dataset.Music import Song, Track, NoteData
-from utils.constants import RAW_DATASET_PATH, DATASET_PATH
+from utils.constants import RAW_DATASET_PATH, DATASET_PATH, NOTE_TO_FREQ
 
 
 def csv_cleaner(data: List[str]) -> Song:
@@ -75,6 +75,18 @@ def csv_to_series(song: Song, time_step=10) -> List[List[int]]:
     return series_data
 
 
+def series_to_frequencies(series: List[List[int]]) -> List[List[int]]:
+    frequency_series = []
+    for s in series:
+        if len(s) == 0:
+            frequency_series.append([0.0])
+        else:
+            frequency_series.append([NOTE_TO_FREQ[x] for x in s])
+    return frequency_series
+
+def leave_one_track(frequency_series:List[List[int]])-> List[int]:
+    return [ s[0] for s in frequency_series  ]
+
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
 
@@ -89,8 +101,14 @@ if __name__ == '__main__':
     logging.info('Converting information to time series...')
     time_series = list(map(csv_to_series, tqdm(csv_preprocessed, ncols=150)))
 
-    for path, time_steps in zip(files, time_series):
+    logging.info('Converting information to frequencies...')
+    frequencies = list(map(series_to_frequencies, tqdm(time_series, ncols=150)))
+
+    logging.info('Leaving one track...')
+    track = list(map(leave_one_track, tqdm(frequencies, ncols=150)))
+
+    for path, time_steps in zip(files, track):
         file = path.split('/')[-1][:-4] + '.txt'
         with open(f'{DATASET_PATH}/{file}', mode='w') as f:
             for ts in time_steps:
-                f.write('\t'.join(map(str, ts)) + '\n')
+                f.write(str(ts) + '\n')
