@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2.0.0/webcomponents-loader.js"></script>
+    <script src="https://unpkg.com/@magenta/music@1.1.9/dist/magentamusic.js"></script>
+    <script src="{{ url_for('static', filename='midi-visualizer.js') }}"></script>
+    <script src="{{ url_for('static', filename='midi-helpers.js') }}"></script>
+</head>
+<body>
+<div>
+    <button id="playBtn" disabled>wait...</button>
+    <span class="input">tempo: <input id="tempoInput" value="100" placeholder="tempo"></span>
+    <label class="input">
+        <input type="file" onchange="loadFile(event)">
+        Load midi file
+    </label>
+</div>
+<midi-visualizer
+        id="visualizer"
+        url="https://cdn.glitch.com/3312a3b4-6418-4bed-a0bd-3a0ca4dfa2fb%2Fchopin.mid?1534369337985">
+</midi-visualizer>
+</body>
+</html>
