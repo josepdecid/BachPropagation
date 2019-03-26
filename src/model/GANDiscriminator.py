@@ -5,7 +5,7 @@ from model.RNN import RNN
 
 
 class GANDiscriminator(nn.Module):
-    def __init__(self, hid_dim: int):
+    def __init__(self, layers: int, hid_dim: int, bidirectional=False):
         """
         Discriminator **D** network of a GAN model.
         Applies a RNN to the output of the Generator **G**, and passes each hidden state through a Dense Layer.
@@ -14,8 +14,15 @@ class GANDiscriminator(nn.Module):
         """
         super(GANDiscriminator, self).__init__()
 
-        self.rnn = RNN(architecture='GRU', inp_dim=MAX_POLYPHONY, hid_dim=hid_dim, layers=2, bidirectional=True)
-        self.dense = nn.Linear(in_features=2 * hid_dim, out_features=1)
+        self.rnn = RNN(architecture='GRU',
+                       inp_dim=MAX_POLYPHONY,
+                       hid_dim=hid_dim,
+                       layers=layers,
+                       bidirectional=bidirectional)
+
+        dense_input_features = (2 if bidirectional else 1) * hid_dim
+        self.dense = nn.Linear(in_features=dense_input_features,
+                               out_features=1)
 
     def forward(self, x):
         x = self.rnn(x)

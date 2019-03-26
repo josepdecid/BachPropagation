@@ -7,7 +7,7 @@ from model.RNN import RNN
 
 
 class GANGenerator(nn.Module):
-    def __init__(self, hid_dim: int):
+    def __init__(self, layers: int, hid_dim: int, bidirectional=False):
         """
         **Generator** network of a GAN model.
         Applies a RNN to a random noise generator, and passes each hidden state through a Dense Layer.
@@ -16,8 +16,15 @@ class GANGenerator(nn.Module):
         """
         super(GANGenerator, self).__init__()
 
-        self.rnn = RNN(architecture='GRU', inp_dim=MAX_POLYPHONY, hid_dim=hid_dim, layers=2, bidirectional=False)
-        self.dense = nn.Linear(in_features=hid_dim, out_features=hid_dim)
+        self.rnn = RNN(architecture='GRU',
+                       inp_dim=MAX_POLYPHONY,
+                       hid_dim=hid_dim,
+                       layers=layers,
+                       bidirectional=bidirectional)
+
+        dense_input_features = (2 if bidirectional else 1) * hid_dim
+        self.dense = nn.Linear(in_features=dense_input_features,
+                               out_features=MAX_POLYPHONY)
 
     def forward(self, x):
         x, _ = self.rnn(x)

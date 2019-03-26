@@ -12,11 +12,11 @@ class GANModel:
         self.d_optimizer: NNet = None
 
     def initialize_generator(self, hid_dim: int, optimizer: Optimizer):
-        self.generator = GANGenerator(hid_dim=hid_dim)
+        self.generator = GANGenerator(layers=2, hid_dim=hid_dim)
         self.g_optimizer = optimizer(self.generator.parameters())
 
     def initialize_discriminator(self, hid_dim: int, optimizer: Optimizer):
-        self.discriminator = GANDiscriminator(hid_dim=hid_dim)
+        self.discriminator = GANDiscriminator(layers=2, hid_dim=hid_dim)
         self.d_optimizer = optimizer(self.discriminator.parameters())
 
     def train_mode(self):
