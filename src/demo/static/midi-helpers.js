@@ -3,14 +3,26 @@ let loadFile = () => {
 
 document.addEventListener('DOMContentLoaded', function () {
     let tempoInput = document.getElementById('tempoInput');
+    let tempoInputNum = document.getElementById('tempoInputNum');
+
     let playBtn = document.getElementById('playBtn');
     let visualizer = document.getElementById('visualizer');
-    let file = document.getElementById('file');
 
-    tempoInput.addEventListener('change', () => visualizer.tempo = tempoInput.value);
+    tempoInput.addEventListener('change', () => {
+        visualizer.tempo = tempoInput.value;
+        tempoInputNum.value = tempoInput.value;
+    });
+
+    tempoInputNum.addEventListener('change', () => {
+        visualizer.tempo = tempoInputNum.value;
+        tempoInput.value = tempoInputNum.value;
+    });
+
     playBtn.addEventListener('click', () => startOrStop());
+
     visualizer.addEventListener('visualizer-ready', () => {
         tempoInput.value = visualizer.tempo;
+        tempoInputNum.value = visualizer.tempo;
         playBtn.disabled = false;
         playBtn.textContent = 'play';
     });

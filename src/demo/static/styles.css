@@ -1,0 +1,143 @@
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    margin: 40px;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    overflow-x: hidden;
+    --pink: #F05477;
+    --teal: #6FC9C6;
+    background-color: black;
+    height: 100vh;
+}
+
+h1, h2 {
+    font-family: 'IBM Plex Mono', serif;
+    color: var(--pink);
+}
+
+a:link, a:visited {
+    color: black;
+    text-decoration: none;
+    border-bottom: 4px solid var(--pink);
+}
+
+a:hover {
+    color: white;
+    background: var(--pink);
+}
+
+footer {
+    text-align: left;
+    margin: 24px auto;
+}
+
+button, .input {
+    background: var(--teal);
+    color: white;
+    border: none;
+    margin: 0;
+    padding: 8px 14px;
+    font-size: 18px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: bold;
+    cursor: pointer;
+    min-width: 100px;
+}
+
+button[disabled] {
+    opacity: 0.5;
+}
+
+input {
+    font-family: inherit;
+    font-size: inherit;
+    border: none;
+    background: white;
+    width: 60px;
+}
+
+input[type="file"] {
+    width: 0;
+    height: 0;
+    opacity: 0;
+    cursor: pointer;
+    display: none;
+}
+
+#controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#playBtn, #fileContainer {
+    flex-grow: 0.2;
+}
+
+#tempoContainer {
+    flex-grow: 0.4;
+}
+
+#tempo {
+    width: 25%;
+}
+
+#tempoInput {
+    width: 40%;
+}
+
+#tempoInputNum {
+    width: 20%;
+    background-color: #B1CFCF;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 15px;
+  border-radius: 5px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: rgba(184, 52, 34, 0.8);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: rgba(184, 52, 34, 0.8);
+  cursor: pointer;
+}
+
+midi-visualizer {
+    width: 100%;
+    height: 80%;
+    border: 5px solid var(--teal);
+}
+
+@media (max-width: 450px) {
+    body {
+        margin: 24px 14px;
+    }
+
+    .glitchButtonElement img {
+        width: 24px;
+    }
+
+    .glitchButton {
+        top: 40px !important;
+    }
+}

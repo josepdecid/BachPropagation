@@ -4,13 +4,19 @@
     <script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2.0.0/webcomponents-loader.js"></script>
     <script src="https://unpkg.com/@magenta/music@1.1.9/dist/magentamusic.js"></script>
     <script src="{{ url_for('static', filename='midi-visualizer.js') }}"></script>
+
     <script src="{{ url_for('static', filename='midi-helpers.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-<div>
+<div id="controls">
     <button id="playBtn" disabled>wait...</button>
-    <span class="input">tempo: <input id="tempoInput" value="100" placeholder="tempo"></span>
-    <label class="input">
+    <div id="tempoContainer" class="input">
+        <span id="tempo">Tempo:</span>
+        <input id="tempoInput" class="slider" type="range" min="40" max="208" value="50">
+        <input id="tempoInputNum" type="number" min="40" max="208" value="50">
+    </div>
+    <label id="fileContainer" class="input">
         <input type="file" onchange="loadFile(event)">
         Load midi file
     </label>
