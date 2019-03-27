@@ -55,9 +55,9 @@ def train_discriminator(optimizer: Optimizer, criterion: Criterion, discriminato
     return loss_real + loss_fake
 
 
-def train_epoch(model: GANModel, criterion: Criterion, loader: DataLoader) -> float:
+def train_epoch(model: GANModel, g_criterion: Criterion, d_criterion: Criterion, loader: DataLoader) -> float:
     model.train_mode()
-    for batch in tqdm(loader, ncols=100):
+    for batch in loader:
         batch_size = batch.size(0)
         input_dim = batch.size(1)
 
@@ -70,7 +70,7 @@ def train_epoch(model: GANModel, criterion: Criterion, loader: DataLoader) -> fl
         fake_data = model.generator(noise_data).detach()
 
         d_loss = train_discriminator(optimizer=model.d_optimizer,
-                                     criterion=criterion,
+                                     criterion=d_criterion,
                                      discriminator=model.discriminator,
                                      real_data=real_data,
                                      fake_data=fake_data)
@@ -81,7 +81,7 @@ def train_epoch(model: GANModel, criterion: Criterion, loader: DataLoader) -> fl
         fake_data = model.generator(noise_data)
 
         g_loss = train_generator(optimizer=model.g_optimizer,
-                                 criterion=criterion,
+                                 criterion=g_criterion,
                                  discriminator=model.discriminator,
                                  fake_data=fake_data)
 
@@ -95,11 +95,14 @@ def test_epoch(model: GANModel, loader: DataLoader) -> float:
     return 42.0
 
 
+def generator_loss(prediction, ones):
+    return torch.mean(torch.log(ones - prediction))
+
+
 def train(model: GANModel, epochs: int, train_loader: DataLoader, test_loader: DataLoader):
     criterion = nn.BCELoss()
-
     for epoch in range(epochs):
-        loss = train_epoch(model=model, criterion=criterion, loader=train_loader)
+        loss = train_epoch(model=model, g_criterion = generator_loss, d_criterion=criterion, loader=train_loader)
         accuracy = test_epoch(model=model, loader=test_loader)
         print(f'Epoch {epoch}: Training loss = {loss}, Test accuracy = {accuracy}')
 

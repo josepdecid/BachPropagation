@@ -20,7 +20,8 @@ class NoteData(object):
         raise NotImplementedError
 
     def is_playing(self, time: int) -> bool:
-        return self.note_start <= time <= self.note_end
+        # return self.note_start <= time <= self.note_end
+        return time <= self.note_end
 
 
 class Track:
