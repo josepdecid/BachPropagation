@@ -16,8 +16,10 @@ class MusicDataset(Dataset):
             with open(path, mode='r') as f:
                 self.songs.append(self._read_song(f))
 
+        self.padded_songs = self._apply_padding()
+
     def __getitem__(self, index):
-        x = self.songs[index]
+        x = self.padded_songs[index]
         return FloatTensor(x)
 
     def __len__(self):
@@ -28,9 +30,12 @@ class MusicDataset(Dataset):
         return DataLoader(self, batch_size=batch_size, shuffle=shuffle, **kwargs)
 
     def _apply_padding(self):
-        for i in range(len(self.songs)):
-            if len(self.songs[i]) < self.longest_song:
-                self.songs[i] = self.songs[i] + [0.0] * (self.longest_song - len(self.songs[i]))
+        padded_songs = []
+        for song in self.songs:
+            padding = self.longest_song - len(song)
+            padded_song = song + ([0.] * padding)
+            padded_songs.append(padded_song)
+        return padded_songs
 
     def _update_longest_song(self, length: int):
         self.longest_song = max(length, self.longest_song)

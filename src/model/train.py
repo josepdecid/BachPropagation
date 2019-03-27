@@ -1,5 +1,4 @@
 import torch
-from torch import nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
@@ -8,8 +7,6 @@ from model.GANModel import GANModel
 from model.GANGenerator import GANGenerator
 from utils.constants import BATCH_SIZE, MAX_POLYPHONY
 from utils.typings import Optimizer, Criterion, NNet
-
-from tqdm import tqdm
 
 
 def train_generator(optimizer: Optimizer, criterion: Criterion, discriminator: NNet, fake_data):
@@ -55,7 +52,7 @@ def train_discriminator(optimizer: Optimizer, criterion: Criterion, discriminato
     return loss_real + loss_fake
 
 
-def train_epoch(model: GANModel, g_criterion: Criterion, d_criterion: Criterion, loader: DataLoader) -> float:
+def train_epoch(model: GANModel, loader: DataLoader) -> float:
     model.train_mode()
     for batch in loader:
         batch_size = batch.size(0)
@@ -70,7 +67,7 @@ def train_epoch(model: GANModel, g_criterion: Criterion, d_criterion: Criterion,
         fake_data = model.generator(noise_data).detach()
 
         d_loss = train_discriminator(optimizer=model.d_optimizer,
-                                     criterion=d_criterion,
+                                     criterion=model.d_criterion,
                                      discriminator=model.discriminator,
                                      real_data=real_data,
                                      fake_data=fake_data)
@@ -81,7 +78,7 @@ def train_epoch(model: GANModel, g_criterion: Criterion, d_criterion: Criterion,
         fake_data = model.generator(noise_data)
 
         g_loss = train_generator(optimizer=model.g_optimizer,
-                                 criterion=g_criterion,
+                                 criterion=model.g_criterion,
                                  discriminator=model.discriminator,
                                  fake_data=fake_data)
 
@@ -95,14 +92,9 @@ def test_epoch(model: GANModel, loader: DataLoader) -> float:
     return 42.0
 
 
-def generator_loss(prediction, ones):
-    return torch.mean(torch.log(ones - prediction))
-
-
 def train(model: GANModel, epochs: int, train_loader: DataLoader, test_loader: DataLoader):
-    criterion = nn.BCELoss()
     for epoch in range(epochs):
-        loss = train_epoch(model=model, g_criterion = generator_loss, d_criterion=criterion, loader=train_loader)
+        loss = train_epoch(model=model, loader=train_loader)
         accuracy = test_epoch(model=model, loader=test_loader)
         print(f'Epoch {epoch}: Training loss = {loss}, Test accuracy = {accuracy}')
 
@@ -114,11 +106,9 @@ if __name__ == '__main__':
         model.initialize_discriminator(100, torch.optim.Adam)
 
         train_songs = MusicDataset()
-        train_songs._apply_padding()
 
         # TODO: Test necessary?
         test_songs = MusicDataset()
-        test_songs._apply_padding()
 
         train(model=model,
               epochs=100,
