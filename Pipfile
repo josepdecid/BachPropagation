@@ -12,6 +12,9 @@ tqdm = "*"
 torch = "*"
 torchvision = "*"
 flask = "*"
+tensorboardx = "*"
+tensorboard = "*"
+tensorflow = "*"
 
 [requires]
 python_version = "3.7"

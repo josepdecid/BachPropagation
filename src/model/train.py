@@ -3,8 +3,8 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from dataset.MusicDataset import MusicDataset
-from model.GANModel import GANModel
 from model.GANGenerator import GANGenerator
+from model.GANModel import GANModel
 from utils.constants import BATCH_SIZE, MAX_POLYPHONY
 from utils.typings import Optimizer, Criterion, NNet
 
