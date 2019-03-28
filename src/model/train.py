@@ -85,35 +85,20 @@ def train_epoch(model: GANModel, loader: DataLoader) -> float:
         return d_loss + g_loss
 
 
-def test_epoch(model: GANModel, loader: DataLoader) -> float:
-    model.test_mode()
-    for _ in loader:
-        pass
-    return 42.0
-
-
-def train(model: GANModel, epochs: int, train_loader: DataLoader, test_loader: DataLoader):
+def train(model: GANModel, epochs: int, train_loader: DataLoader):
     for epoch in range(epochs):
         loss = train_epoch(model=model, loader=train_loader)
-        accuracy = test_epoch(model=model, loader=test_loader)
-        print(f'Epoch {epoch}: Training loss = {loss}, Test accuracy = {accuracy}')
+        print(f'Epoch {epoch}: Training loss = {loss}')
 
 
 if __name__ == '__main__':
     def main():
         model = GANModel()
-        model.initialize_generator(100, torch.optim.Adam)
-        model.initialize_discriminator(100, torch.optim.Adam)
-
         train_songs = MusicDataset()
-
-        # TODO: Test necessary?
-        test_songs = MusicDataset()
 
         train(model=model,
               epochs=100,
-              train_loader=train_songs.get_dataloader(BATCH_SIZE),
-              test_loader=test_songs.get_dataloader(BATCH_SIZE))
+              train_loader=train_songs.get_dataloader(BATCH_SIZE))
 
 
     main()
