@@ -45,5 +45,5 @@ class GANModel:
         return torch.mean(torch.log(ones - prediction))
 
     @staticmethod
-    def _discriminator_criterion(y, y_hat):
-        return F.binary_cross_entropy(y, y_hat)
+    def _discriminator_criterion(y_hat, y):
+        return F.binary_cross_entropy(input=y_hat, target=y)

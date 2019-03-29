@@ -13,9 +13,8 @@ from utils.constants import BATCH_SIZE, MAX_POLYPHONY
 def train_generator(model: GANModel, data):
     logging.debug('Training Generator')
 
-    print(data.size())
-
-    noise_data = GANGenerator.noise((BATCH_SIZE, data.size(1), MAX_POLYPHONY))
+    time_steps = data.size(1)
+    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, MAX_POLYPHONY))
     fake_data = model.generator(noise_data)
 
     # Reset gradients
@@ -25,7 +24,7 @@ def train_generator(model: GANModel, data):
     prediction = model.discriminator(fake_data)
 
     # Calculate gradients w.r.t parameters and backpropagate
-    loss = model.g_criterion(prediction, Variable(torch.ones(fake_data.size(0), 1)))
+    loss = model.g_criterion(prediction, Variable(torch.ones(BATCH_SIZE, 1)))
     loss.backward()
 
     # Update parameters
@@ -34,6 +33,8 @@ def train_generator(model: GANModel, data):
 
 
 def train_discriminator(model: GANModel, data):
+    logging.debug('Training Discriminator')
+
     def train_data(x, fake: bool):
         # Forwards pass to get logits
         prediction = model.discriminator(x)
@@ -41,22 +42,17 @@ def train_discriminator(model: GANModel, data):
         # Calculate gradients w.r.t parameters and backpropagate
         n = real_data.size(0)
         target = Variable(torch.zeros(n)) if fake else Variable(torch.ones(n))
+
         loss = model.d_criterion(prediction, target)
         loss.backward()
 
         return loss
 
-    logging.debug('Training Generator')
-
-    print(data.size())
-    batch_size = data.size(0)
-    input_dim = data.size(1)
+    time_steps = data.size(1)
 
     real_data = Variable(data)
-    real_data = real_data.view(input_dim, batch_size, MAX_POLYPHONY)
 
-    noise_data = GANGenerator.noise((BATCH_SIZE, data.size(1), MAX_POLYPHONY))
-    noise_data = noise_data.view(input_dim, batch_size, MAX_POLYPHONY)
+    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, MAX_POLYPHONY))
     fake_data = model.generator(noise_data).detach()
 
     # Reset gradients

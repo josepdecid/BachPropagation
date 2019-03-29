@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from utils.constants import MAX_POLYPHONY, LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D
+from utils.constants import MAX_POLYPHONY, LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, BATCH_SIZE
 
 from model.RNN import RNN
 
@@ -27,4 +27,6 @@ class GANDiscriminator(nn.Module):
         x, _ = self.rnn(x)
         x = self.dense(x)
         x = torch.sigmoid(x)
+        x = torch.mean(x, 1)
+        x = x.view((-1,))
         return x
