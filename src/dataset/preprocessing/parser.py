@@ -123,4 +123,4 @@ if __name__ == '__main__':
         file = path.split('/')[-1][:-4] + '.txt'
         with open(f'{DATASET_PATH}/{file}', mode='w') as f:
             for ts in time_steps:
-                f.write(str(ts) + '\n')
+                f.write(' '.join(map(str, ts)) + '\n')
