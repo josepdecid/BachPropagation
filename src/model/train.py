@@ -17,6 +17,8 @@ def train_generator(model: GANModel, data):
     noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, MAX_POLYPHONY))
     fake_data = model.generator(noise_data)
 
+    print(fake_data)
+
     # Reset gradients
     model.g_optimizer.zero_grad()
 
@@ -81,7 +83,6 @@ def train(model: GANModel, epochs: int, train_loader: DataLoader):
     for epoch in range(epochs):
         loss = train_epoch(model=model, loader=train_loader)
         print(f'Epoch {epoch}: Training loss = {loss}')
-
 
 if __name__ == '__main__':
     def main():

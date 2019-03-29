@@ -2,6 +2,7 @@ from typing import Tuple
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 from torch.autograd import Variable
 
 from model.RNN import RNN
@@ -29,6 +30,7 @@ class GANGenerator(nn.Module):
     def forward(self, x):
         x, _ = self.rnn(x)
         x = self.dense(x)
+        x = F.relu(x)
         return x
 
     @staticmethod
