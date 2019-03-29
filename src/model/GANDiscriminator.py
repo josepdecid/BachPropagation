@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from utils.constants import MAX_POLYPHONY, LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D
 
 from model.RNN import RNN
+from utils.constants import LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, NUM_NOTES
 
 
 class GANDiscriminator(nn.Module):
@@ -15,7 +15,7 @@ class GANDiscriminator(nn.Module):
         super(GANDiscriminator, self).__init__()
 
         self.rnn = RNN(architecture='GRU',
-                       inp_dim=MAX_POLYPHONY,
+                       inp_dim=NUM_NOTES,
                        hid_dim=HIDDEN_DIM_D,
                        layers=LAYERS_D,
                        bidirectional=BIDIRECTIONAL_D)

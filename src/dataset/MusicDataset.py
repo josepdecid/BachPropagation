@@ -5,7 +5,7 @@ from typing import List
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from utils.constants import DATASET_PATH, MAX_POLYPHONY
+from utils.constants import DATASET_PATH, NUM_NOTES
 from utils.tensors import use_cuda
 from utils.typings import File, FloatTensor
 
@@ -36,7 +36,7 @@ class MusicDataset(Dataset):
     def _apply_padding(self) -> List[FloatTensor]:
         padded_songs = []
         for song in self.songs:
-            padded_song = torch.zeros((self.longest_song, MAX_POLYPHONY), dtype=torch.float)
+            padded_song = torch.zeros((self.longest_song, NUM_NOTES), dtype=torch.float)
             padded_song[:len(song), :] = FloatTensor(song)
             padded_songs.append(padded_song)
         return padded_songs
@@ -51,8 +51,7 @@ class MusicDataset(Dataset):
 
     @staticmethod
     def _parse_features(line):
-        data = list(map(float, line.strip().split('\t')))
-        frequencies = [0.0] * MAX_POLYPHONY
-        frequencies[:len(data)] = data
-
-        return [float(f) for f in frequencies]
+        data = list(map(int, line.strip().split()))
+        # frequencies = [0.0] * MAX_POLYPHONY
+        # frequencies[:len(data)] = data
+        return data

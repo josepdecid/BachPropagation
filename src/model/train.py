@@ -7,11 +7,11 @@ from torch.utils.data import DataLoader
 from dataset.MusicDataset import MusicDataset
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
-from utils.constants import BATCH_SIZE, MAX_POLYPHONY, EPOCHS
+from utils.constants import BATCH_SIZE, MAX_POLYPHONY, EPOCHS, NUM_NOTES
 
 
 def generate_sample(model: GANModel, time_steps: int):
-    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, MAX_POLYPHONY))
+    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, NUM_NOTES))
     sample_data = model.generator(noise_data)
     _, sample_notes = sample_data.max(0)
     return sample_notes
@@ -21,10 +21,8 @@ def train_generator(model: GANModel, data):
     logging.debug('Training Generator')
 
     time_steps = data.size(1)
-    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, MAX_POLYPHONY))
+    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, NUM_NOTES))
     fake_data = model.generator(noise_data)
-
-    print(fake_data)
 
     # Reset gradients
     model.g_optimizer.zero_grad()
@@ -61,7 +59,7 @@ def train_discriminator(model: GANModel, data):
 
     real_data = Variable(data)
 
-    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, MAX_POLYPHONY))
+    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, NUM_NOTES))
     fake_data = model.generator(noise_data).detach()
 
     # Reset gradients
@@ -91,7 +89,6 @@ def train(model: GANModel, dataset: MusicDataset):
         loss = train_epoch(model=model, loader=dataset.get_dataloader(BATCH_SIZE, shuffle=True))
         print(f'Epoch {epoch}: Training loss = {loss}')
         sample = generate_sample(model, dataset.longest_song)
-        print(sample)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
