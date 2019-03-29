@@ -6,7 +6,7 @@ from torch.nn import functional as F
 from torch.autograd import Variable
 
 from model.RNN import RNN
-from utils.constants import MAX_POLYPHONY, HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G
+from utils.constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, NUM_NOTES
 
 
 class GANGenerator(nn.Module):
@@ -19,24 +19,23 @@ class GANGenerator(nn.Module):
         super(GANGenerator, self).__init__()
 
         self.rnn = RNN(architecture='GRU',
-                       inp_dim=MAX_POLYPHONY,
+                       inp_dim=NUM_NOTES,
                        hid_dim=HIDDEN_DIM_G,
                        layers=LAYERS_G,
                        bidirectional=BIDIRECTIONAL_G)
 
         dense_input_features = (2 if BIDIRECTIONAL_G else 1) * HIDDEN_DIM_G
-        self.dense = nn.Linear(in_features=dense_input_features, out_features=MAX_POLYPHONY)
+        self.dense = nn.Linear(in_features=dense_input_features, out_features=NUM_NOTES)
 
     def forward(self, x):
         x, _ = self.rnn(x)
         x = self.dense(x)
-        x = F.relu(x)
-        return x
+        return F.softmax(x, dim=1)
 
     @staticmethod
     def noise(dims: Tuple):
         """
-        Generates a 2-d vector of gaussian sampled random values.
+        Generates a 2-d vector of uniform sampled random values.
         :param dims: Tuple with the dimensions of the data.
         """
         return Variable(torch.randn(dims))
