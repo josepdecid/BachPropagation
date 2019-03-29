@@ -1,13 +1,12 @@
 import glob
 import logging
-from tqdm import tqdm
 from typing import List, Dict
-import numpy as np
 
 from py_midicsv import midi_to_csv
+from tqdm import tqdm
 
 from dataset.Music import Song, Track, NoteData
-from utils.constants import RAW_DATASET_PATH, DATASET_PATH, NOTE_TO_FREQ, NUM_NOTES
+from utils.constants import RAW_DATASET_PATH, DATASET_PATH, NOTE_TO_FREQ, NUM_NOTES, MIN_NOTE
 
 
 def csv_cleaner(data: List[str]) -> Song:
@@ -93,18 +92,14 @@ def series_to_frequencies(series: List[List[int]]) -> List[List[int]]:
     return frequency_series
 
 
-def OneHot(series: List[List[int]]):
-    ONE_HOT = []
-    for s in series:
-        one_hot_vect = np.zeros(NUM_NOTES)
-        for note in s:
-            one_hot_vect[note - 21] = 1
-        ONE_HOT.append(one_hot_vect.tolist())
-    return ONE_HOT
-
-
-def leave_one_track(frequency_series: List[List[int]]) -> List[int]:
-    return [s[0] for s in frequency_series]
+def series_to_one_hot(series: List[List[int]]):
+    one_hot_song = []
+    for notes in series:
+        one_hot_note = [0] * NUM_NOTES
+        for note in notes:
+            one_hot_note[note - MIN_NOTE] = 1
+        one_hot_song.append(one_hot_note)
+    return one_hot_song
 
 
 if __name__ == '__main__':
@@ -122,10 +117,7 @@ if __name__ == '__main__':
     time_series = list(map(csv_to_series, tqdm(csv_preprocessed, ncols=150)))
 
     logging.info('Converting information to frequencies...')
-    one_hot_notes = list(map(OneHot, tqdm(time_series, ncols=150)))
-
-    # logging.info('Leaving one track...')
-    # track = list(map(leave_one_track, tqdm(frequencies, ncols=150)))
+    one_hot_notes = list(map(series_to_one_hot, tqdm(time_series, ncols=150)))
 
     for path, time_steps in zip(files, one_hot_notes):
         file = path.split('/')[-1][:-4] + '.txt'

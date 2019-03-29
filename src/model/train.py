@@ -7,7 +7,14 @@ from torch.utils.data import DataLoader
 from dataset.MusicDataset import MusicDataset
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
-from utils.constants import BATCH_SIZE, MAX_POLYPHONY
+from utils.constants import BATCH_SIZE, MAX_POLYPHONY, EPOCHS
+
+
+def generate_sample(model: GANModel, time_steps: int):
+    noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, MAX_POLYPHONY))
+    sample_data = model.generator(noise_data)
+    _, sample_notes = sample_data.max(0)
+    return sample_notes
 
 
 def train_generator(model: GANModel, data):
@@ -78,21 +85,16 @@ def train_epoch(model: GANModel, loader: DataLoader) -> float:
         return d_loss + g_loss
 
 
-def train(model: GANModel, epochs: int, train_loader: DataLoader):
+def train(model: GANModel, dataset: MusicDataset):
     logging.info(f'Training the model...')
-    for epoch in range(epochs):
-        loss = train_epoch(model=model, loader=train_loader)
+    for epoch in range(EPOCHS):
+        loss = train_epoch(model=model, loader=dataset.get_dataloader(BATCH_SIZE, shuffle=True))
         print(f'Epoch {epoch}: Training loss = {loss}')
+        sample = generate_sample(model, dataset.longest_song)
+        print(sample)
 
 if __name__ == '__main__':
-    def main():
-        model = GANModel()
-        train_songs = MusicDataset()
-
-        train(model=model,
-              epochs=100,
-              train_loader=train_songs.get_dataloader(BATCH_SIZE))
-
-
     logging.getLogger().setLevel(logging.DEBUG)
-    main()
+
+    train(model=GANModel(),
+          dataset=MusicDataset())

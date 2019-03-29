@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from utils.constants import MAX_POLYPHONY, LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, BATCH_SIZE
+from utils.constants import MAX_POLYPHONY, LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D
 
 from model.RNN import RNN
 
