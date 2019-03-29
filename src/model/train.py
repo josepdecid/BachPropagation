@@ -1,3 +1,5 @@
+import logging
+
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
@@ -9,11 +11,11 @@ from utils.constants import BATCH_SIZE, MAX_POLYPHONY
 
 
 def train_generator(model: GANModel, data):
-    batch_size = data.size(0)
-    input_dim = data.size(1)
+    logging.debug('Training Generator')
 
-    noise_data = GANGenerator.noise(batch_size, input_dim)
-    noise_data = noise_data.view(input_dim, batch_size, MAX_POLYPHONY)
+    print(data.size())
+
+    noise_data = GANGenerator.noise((BATCH_SIZE, data.size(1), MAX_POLYPHONY))
     fake_data = model.generator(noise_data)
 
     # Reset gradients
@@ -44,13 +46,16 @@ def train_discriminator(model: GANModel, data):
 
         return loss
 
+    logging.debug('Training Generator')
+
+    print(data.size())
     batch_size = data.size(0)
     input_dim = data.size(1)
 
     real_data = Variable(data)
     real_data = real_data.view(input_dim, batch_size, MAX_POLYPHONY)
 
-    noise_data = GANGenerator.noise(batch_size, input_dim)
+    noise_data = GANGenerator.noise((BATCH_SIZE, data.size(1), MAX_POLYPHONY))
     noise_data = noise_data.view(input_dim, batch_size, MAX_POLYPHONY)
     fake_data = model.generator(noise_data).detach()
 
@@ -69,7 +74,6 @@ def train_discriminator(model: GANModel, data):
 
 
 def train_epoch(model: GANModel, loader: DataLoader) -> float:
-    model.train_mode()
     for features in loader:
         d_loss = train_discriminator(model=model, data=features)
         g_loss = train_generator(model=model, data=features)
@@ -77,6 +81,7 @@ def train_epoch(model: GANModel, loader: DataLoader) -> float:
 
 
 def train(model: GANModel, epochs: int, train_loader: DataLoader):
+    logging.info(f'Training the model...')
     for epoch in range(epochs):
         loss = train_epoch(model=model, loader=train_loader)
         print(f'Epoch {epoch}: Training loss = {loss}')
@@ -92,4 +97,5 @@ if __name__ == '__main__':
               train_loader=train_songs.get_dataloader(BATCH_SIZE))
 
 
+    logging.getLogger().setLevel(logging.DEBUG)
     main()
