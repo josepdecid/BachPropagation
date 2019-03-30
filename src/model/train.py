@@ -1,13 +1,16 @@
 import logging
 
+import sys
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
+from dataset.preprocessing.reconstructor import reconstruct_midi
 from dataset.MusicDataset import MusicDataset
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
-from utils.constants import BATCH_SIZE, MAX_POLYPHONY, EPOCHS, NUM_NOTES
+from utils.constants import BATCH_SIZE, EPOCHS, NUM_NOTES
+from utils.tensors import device
 
 
 def generate_sample(model: GANModel, time_steps: int):
@@ -86,12 +89,17 @@ def train_epoch(model: GANModel, loader: DataLoader) -> float:
 def train(model: GANModel, dataset: MusicDataset):
     logging.info(f'Training the model...')
     for epoch in range(EPOCHS):
-        loss = train_epoch(model=model, loader=dataset.get_dataloader(BATCH_SIZE, shuffle=True))
+        loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
         print(f'Epoch {epoch}: Training loss = {loss}')
-        sample = generate_sample(model, dataset.longest_song)
+
+        sample = generate_sample(model, 30000)[:, 0].numpy()
+        reconstruct_midi(title=f'Sample {epoch}', data=sample)
+
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
+
+    logging.info(f'Running Python {sys.version.split()[0]} with PyTorch {torch.__version__} in {device}')
 
     train(model=GANModel(),
           dataset=MusicDataset())
