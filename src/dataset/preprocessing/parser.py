@@ -6,7 +6,7 @@ from py_midicsv import midi_to_csv
 from tqdm import tqdm
 
 from dataset.Music import Song, Track, NoteData
-from utils.constants import RAW_DATASET_PATH, DATASET_PATH, NOTE_TO_FREQ, NUM_NOTES, MIN_NOTE
+from utils.constants import RAW_DATASET_PATH, DATASET_PATH, NUM_NOTES, MIN_NOTE
 
 
 def csv_cleaner(data: List[str]) -> Song:
@@ -82,16 +82,6 @@ def csv_to_series(song: Song, time_step=10) -> List[List[int]]:
     return series_data
 
 
-def series_to_frequencies(series: List[List[int]]) -> List[List[int]]:
-    frequency_series = []
-    for s in series:
-        if len(s) == 0:
-            frequency_series.append([0.0])
-        else:
-            frequency_series.append([NOTE_TO_FREQ[x] for x in s])
-    return frequency_series
-
-
 def series_to_one_hot(series: List[List[int]]):
     one_hot_song = []
     for notes in series:
@@ -116,7 +106,7 @@ if __name__ == '__main__':
     logging.info('Converting information to time series...')
     time_series = list(map(csv_to_series, tqdm(csv_preprocessed, ncols=150)))
 
-    logging.info('Converting information to frequencies...')
+    logging.info('One-hot encoding notes...')
     one_hot_notes = list(map(series_to_one_hot, tqdm(time_series, ncols=150)))
 
     for path, time_steps in zip(files, one_hot_notes):
