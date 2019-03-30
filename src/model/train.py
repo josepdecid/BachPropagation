@@ -1,6 +1,8 @@
 import logging
 
 import sys
+from typing import Tuple
+
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
@@ -79,18 +81,33 @@ def train_discriminator(model: GANModel, data):
     return loss_real + loss_fake
 
 
-def train_epoch(model: GANModel, loader: DataLoader) -> float:
-    for features in loader:
-        d_loss = train_discriminator(model=model, data=features)
-        g_loss = train_generator(model=model, data=features)
-        return d_loss + g_loss
+def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
+    current_loss_g = 1.e10
+    current_loss_d = 1.e10
+
+    sum_loss_g = []
+    sum_loss_d = []
+
+    for batch_data in loader:
+        if current_loss_d >= 0.7 * current_loss_g:
+            d_loss = train_discriminator(model=model, data=batch_data)
+            current_loss_d = d_loss
+            sum_loss_d.append(d_loss)
+
+        if current_loss_g >= 0.7 * current_loss_d:
+            g_loss = train_generator(model=model, data=batch_data)
+            current_loss_g = g_loss
+            sum_loss_g.append(g_loss)
+
+    return sum(sum_loss_g) / len(sum_loss_g), sum(sum_loss_d) / len(sum_loss_d)
 
 
 def train(model: GANModel, dataset: MusicDataset):
     logging.info(f'Training the model...')
     for epoch in range(EPOCHS):
-        loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
-        print(f'Epoch {epoch}: Training loss = {loss}')
+        g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
+
+        print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
 
         sample = generate_sample(model, 30000)[:, 0].numpy()
         reconstruct_midi(title=f'Sample {epoch}', data=sample)
