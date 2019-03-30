@@ -88,7 +88,9 @@ def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
     sum_loss_g = []
     sum_loss_d = []
 
-    for batch_data in loader:
+    for batch_idx, batch_data in enumerate(loader):
+        logging.debug(f'Batch {batch_idx}/{len(loader)}')
+
         if current_loss_d >= 0.7 * current_loss_g:
             d_loss = train_discriminator(model=model, data=batch_data)
             current_loss_d = d_loss
@@ -115,7 +117,6 @@ def train(model: GANModel, dataset: MusicDataset):
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
-
     logging.info(f'Running Python {sys.version.split()[0]} with PyTorch {torch.__version__} in {device}')
 
     train(model=GANModel(),
