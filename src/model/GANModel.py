@@ -5,6 +5,7 @@ from torch.nn import functional as F
 
 from model.GANDiscriminator import GANDiscriminator
 from model.GANGenerator import GANGenerator
+from utils.constants import LR_G, L2_G, L2_D, LR_D
 from utils.typings import NNet, Optimizer, Criterion
 
 
@@ -13,11 +14,11 @@ class GANModel:
         logging.info('Creating GAN model...')
 
         self.generator: NNet = GANGenerator()
-        self.g_optimizer: Optimizer = torch.optim.Adam(self.generator.parameters())
+        self.g_optimizer: Optimizer = torch.optim.Adam(self.generator.parameters(), lr=LR_G, weight_decay=L2_G)
         self.g_criterion: Criterion = GANModel._generator_criterion
 
         self.discriminator: NNet = GANDiscriminator()
-        self.d_optimizer: Optimizer = torch.optim.Adam(self.discriminator.parameters())
+        self.d_optimizer: Optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=LR_D, weight_decay=L2_D)
         self.d_criterion: Criterion = GANModel._discriminator_criterion
 
         # with SummaryWriter(log_dir=f'{PROJECT_PATH}/res/log', comment='Generator') as w:
