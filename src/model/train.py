@@ -38,7 +38,7 @@ def train_generator(model: GANModel, data):
     prediction = model.discriminator(fake_data)
 
     # Calculate gradients w.r.t parameters and backpropagate
-    loss = model.g_criterion(prediction, Variable(torch.ones(batch_size, 1).to(device)))
+    loss = model.g_criterion(prediction)
     loss.backward()
 
     # Update parameters
@@ -49,39 +49,29 @@ def train_generator(model: GANModel, data):
 def train_discriminator(model: GANModel, data):
     logging.debug('Training Discriminator')
 
-    def train_data(x, fake: bool):
-        # Forwards pass to get logits
-        prediction = model.discriminator(x)
-
-        # Calculate gradients w.r.t parameters and backpropagate
-        n = real_data.size(0)
-        target = Variable(torch.zeros(n).to(device)) if fake else Variable(torch.ones(n).to(device))
-
-        loss = model.d_criterion(prediction, target)
-        loss.backward()
-
-        return loss
-
     batch_size = data.size(0)
     time_steps = data.size(1)
-
-    real_data = Variable(data)
-
-    noise_data = GANGenerator.noise((batch_size, time_steps, NUM_NOTES))
-    fake_data = model.generator(noise_data).detach()
 
     # Reset gradients
     model.d_optimizer.zero_grad()
 
     # Train on real data
-    loss_real = train_data(real_data, fake=False)
+    real_data = Variable(data)
+    real_predictions = model.discriminator(real_data)
 
     # Train on fake data
-    loss_fake = train_data(fake_data, fake=True)
+    noise_data = GANGenerator.noise((batch_size, time_steps, NUM_NOTES))
+    fake_data = model.generator(noise_data).detach()
+    fake_predictions = model.discriminator(fake_data)
+
+    # Calculate loss and optimize
+    loss = model.d_criterion(real_predictions, fake_predictions)
+    loss.backward()
 
     # Update parameters
     model.d_optimizer.step()
-    return loss_real + loss_fake
+
+    return loss
 
 
 def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
