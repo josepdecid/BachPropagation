@@ -101,9 +101,8 @@ def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
 def train(model: GANModel, dataset: MusicDataset):
     logging.info(f'Training the model...')
     for epoch in range(EPOCHS):
-        # g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
-
-        # print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
+        g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
+        print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
 
         sample = generate_sample(model, dataset.longest_song).cpu().numpy()
         reconstruct_midi(title=f'Sample {epoch}', data=sample)
