@@ -1,5 +1,6 @@
 import logging
 import sys
+from datetime import datetime
 from typing import Tuple
 
 import torch
@@ -10,7 +11,7 @@ from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
-from utils.constants import EPOCHS, NUM_NOTES
+from utils.constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH
 from utils.tensors import device
 
 
@@ -100,12 +101,17 @@ def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
 
 def train(model: GANModel, dataset: MusicDataset):
     logging.info(f'Training the model...')
-    for epoch in range(EPOCHS):
+    for epoch in range(1, EPOCHS + 1):
         g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
         print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
 
         sample = generate_sample(model, dataset.longest_song).cpu().numpy()
         reconstruct_midi(title=f'Sample {epoch}', data=sample)
+
+        if epoch % CKPT_STEPS == 0:
+            ts = str(datetime.now()).split('.')[0].replace(' ', '_')
+            torch.save(model.generator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_G{epoch}.pt')
+            torch.save(model.discriminator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_D{epoch}.pt')
 
 
 if __name__ == '__main__':
