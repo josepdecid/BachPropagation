@@ -109,7 +109,7 @@ if __name__ == '__main__':
     one_hot_notes = list(map(series_to_one_hot, tqdm(time_series, ncols=150)))
 
     logging.info('Writing note features ...')
-    for path, time_steps in zip(files, one_hot_notes):
+    for path, time_steps in tqdm(zip(files, one_hot_notes), ncols=150):
         file = path.split('/')[-1][:-4] + '.txt'
         with open(f'{DATASET_PATH}/{file}', mode='w') as f:
             for ts in time_steps:

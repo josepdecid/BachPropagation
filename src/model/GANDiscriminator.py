@@ -3,6 +3,7 @@ from torch import nn
 
 from model.RNN import RNN
 from utils.constants import LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, NUM_NOTES
+from utils.tensors import device
 
 
 class GANDiscriminator(nn.Module):
@@ -18,7 +19,7 @@ class GANDiscriminator(nn.Module):
                        inp_dim=NUM_NOTES,
                        hid_dim=HIDDEN_DIM_D,
                        layers=LAYERS_D,
-                       bidirectional=BIDIRECTIONAL_D)
+                       bidirectional=BIDIRECTIONAL_D).to(device)
 
         dense_input_features = (2 if BIDIRECTIONAL_D else 1) * HIDDEN_DIM_D
         self.dense = nn.Linear(in_features=dense_input_features, out_features=1)
