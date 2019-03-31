@@ -6,7 +6,7 @@ from py_midicsv import midi_to_csv
 from tqdm import tqdm
 
 from dataset.Music import Song, Track, NoteData
-from utils.constants import RAW_DATASET_PATH, DATASET_PATH, NUM_NOTES, MIN_NOTE
+from utils.constants import RAW_DATASET_PATH, DATASET_PATH, NUM_NOTES, MIN_NOTE, SAMPLE_TIMES
 
 
 def csv_cleaner(data: List[str]) -> Song:
