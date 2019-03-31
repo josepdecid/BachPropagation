@@ -17,9 +17,9 @@ from utils.tensors import device
 def generate_sample(model: GANModel, time_steps: int):
     noise_data = GANGenerator.noise((1, time_steps, NUM_NOTES))
     sample_data = model.generator(noise_data)
-    _, sample_notes = sample_data.max(0)
+    sample_notes = sample_data.argmax(2)
 
-    return sample_notes
+    return sample_notes.view(-1)
 
 
 def train_generator(model: GANModel, data):
@@ -101,11 +101,11 @@ def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
 def train(model: GANModel, dataset: MusicDataset):
     logging.info(f'Training the model...')
     for epoch in range(EPOCHS):
-        g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
+        # g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
 
-        print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
+        # print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
 
-        sample = generate_sample(model, 30000)[:, 0].cpu().numpy()
+        sample = generate_sample(model, dataset.longest_song).cpu().numpy()
         reconstruct_midi(title=f'Sample {epoch}', data=sample)
 
 
