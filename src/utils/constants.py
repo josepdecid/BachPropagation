@@ -11,6 +11,7 @@ CHECKPOINTS_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/checkpoints'
 
 PPath = lambda p: Path(PROJECT_PATH + p)
 
+SAMPLE_STEPS = 1
 CKPT_STEPS = 100
 
 NUM_NOTES = 88

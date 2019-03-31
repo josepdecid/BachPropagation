@@ -11,7 +11,7 @@ from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
-from utils.constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH
+from utils.constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS
 from utils.tensors import device
 
 
@@ -105,8 +105,9 @@ def train(model: GANModel, dataset: MusicDataset):
         g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
         print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
 
-        sample = generate_sample(model, dataset.longest_song).cpu().numpy()
-        reconstruct_midi(title=f'Sample {epoch}', data=sample)
+        if epoch % SAMPLE_STEPS == 0:
+            sample = generate_sample(model, dataset.longest_song).cpu().numpy()
+            reconstruct_midi(title=f'Sample {epoch}', data=sample)
 
         if epoch % CKPT_STEPS == 0:
             ts = str(datetime.now()).split('.')[0].replace(' ', '_')
