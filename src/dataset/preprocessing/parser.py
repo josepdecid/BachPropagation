@@ -50,18 +50,17 @@ def csv_cleaner(data: List[str]) -> Song:
     return Song(tracks)
 
 
-def csv_to_series(song: Song, time_step=10) -> List[List[int]]:
+def csv_to_series(song: Song) -> List[List[int]]:
     """
 
     :param song:
-    :param time_step:
     :return:
     """
     # Index of current treated element for each track.
     track_time_indices = [0] * song.number_tracks
 
     # Get max time of last Note data of all tracks.
-    max_time = song.max_time // time_step
+    max_time = song.max_time // SAMPLE_TIMES
     series_data = [[] for _ in range(max_time)]
 
     time_idx = 0
@@ -72,10 +71,10 @@ def csv_to_series(song: Song, time_step=10) -> List[List[int]]:
                 continue
             note_data = song.get_track(track_idx).get_note_data(track_time_idx)
             # Add note to current time step if it's being played
-            if note_data.is_playing(time_idx * time_step):
+            if note_data.is_playing(time_idx * SAMPLE_TIMES):
                 series_data[time_idx].append(note_data.note)
             # Check if note won't be played on next time step
-            if not note_data.is_playing((time_idx + 1) * time_step):
+            if not note_data.is_playing((time_idx + 1) * SAMPLE_TIMES):
                 track_time_indices[track_idx] += 1
         time_idx += 1
 
@@ -109,6 +108,7 @@ if __name__ == '__main__':
     logging.info('One-hot encoding notes...')
     one_hot_notes = list(map(series_to_one_hot, tqdm(time_series, ncols=150)))
 
+    logging.info('Writing note features ...')
     for path, time_steps in zip(files, one_hot_notes):
         file = path.split('/')[-1][:-4] + '.txt'
         with open(f'{DATASET_PATH}/{file}', mode='w') as f:

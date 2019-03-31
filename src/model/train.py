@@ -19,6 +19,7 @@ def generate_sample(model: GANModel, time_steps: int):
     noise_data = GANGenerator.noise((BATCH_SIZE, time_steps, NUM_NOTES))
     sample_data = model.generator(noise_data)
     _, sample_notes = sample_data.max(0)
+
     return sample_notes
 
 
