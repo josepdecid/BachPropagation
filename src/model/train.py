@@ -85,15 +85,15 @@ def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
         logging.debug(f'Batch {batch_idx}/{len(loader)}')
         batch_data = batch_data.to(device)
 
-        if current_loss_d >= 0.7 * current_loss_g:
-            d_loss = train_discriminator(model=model, data=batch_data)
-            current_loss_d = d_loss
-            sum_loss_d.append(d_loss)
+        # if current_loss_d >= 0.7 * current_loss_g:
+        d_loss = train_discriminator(model=model, data=batch_data)
+        current_loss_d = d_loss
+        sum_loss_d.append(d_loss)
 
-        if current_loss_g >= 0.7 * current_loss_d:
-            g_loss = train_generator(model=model, data=batch_data)
-            current_loss_g = g_loss
-            sum_loss_g.append(g_loss)
+        # if current_loss_g >= 0.7 * current_loss_d:
+        g_loss = train_generator(model=model, data=batch_data)
+        current_loss_g = g_loss
+        sum_loss_g.append(g_loss)
 
     return sum(sum_loss_g) / len(sum_loss_g), sum(sum_loss_d) / len(sum_loss_d)
 
