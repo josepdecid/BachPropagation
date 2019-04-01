@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 from model.RNN import RNN
-from utils.constants import LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, NUM_NOTES
+from utils.constants import LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, NUM_NOTES, TYPE_D
 from utils.tensors import device
 
 
@@ -15,7 +15,7 @@ class GANDiscriminator(nn.Module):
         """
         super(GANDiscriminator, self).__init__()
 
-        self.rnn = RNN(architecture='GRU',
+        self.rnn = RNN(architecture=TYPE_D,
                        inp_dim=NUM_NOTES,
                        hid_dim=HIDDEN_DIM_D,
                        layers=LAYERS_D,

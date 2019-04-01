@@ -6,7 +6,7 @@ from torch.nn import functional as F
 from torch.autograd import Variable
 
 from model.RNN import RNN
-from utils.constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, NUM_NOTES
+from utils.constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, NUM_NOTES, TYPE_G
 from utils.tensors import device
 
 
@@ -19,7 +19,7 @@ class GANGenerator(nn.Module):
         """
         super(GANGenerator, self).__init__()
 
-        self.rnn = RNN(architecture='GRU',
+        self.rnn = RNN(architecture=TYPE_G,
                        inp_dim=NUM_NOTES,
                        hid_dim=HIDDEN_DIM_G,
                        layers=LAYERS_G,

@@ -15,7 +15,11 @@ class RNN(nn.Module):
 
         assert architecture in ('LSTM', 'GRU')
         gated_rnn = nn.LSTM if architecture == 'LSTM' else nn.GRU
-        self.rnn = gated_rnn(input_size=inp_dim, hidden_size=hid_dim, num_layers=layers, bidirectional=bidirectional)
+        self.rnn = gated_rnn(input_size=inp_dim,
+                             hidden_size=hid_dim,
+                             num_layers=layers,
+                             batch_first=True,
+                             bidirectional=bidirectional)
 
     def forward(self, x):
         return self.rnn(x)
