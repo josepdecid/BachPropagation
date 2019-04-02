@@ -16,11 +16,13 @@ from utils.tensors import device
 
 
 def generate_sample(model: GANModel, time_steps: int):
-    noise_data = GANGenerator.noise((1, time_steps, NUM_NOTES))
-    sample_data = model.generator(noise_data)
-    sample_notes = sample_data.argmax(2)
+    model.eval_mode()
+    with torch.no_grad():
+        noise_data = GANGenerator.noise((1, time_steps, NUM_NOTES))
+        sample_data = model.generator(noise_data)
+        sample_notes = sample_data.argmax(2)
 
-    return sample_notes.view(-1)
+        return sample_notes.view(-1)
 
 
 def train_generator(model: GANModel, data):
@@ -82,6 +84,7 @@ def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
     sum_loss_g = []
     sum_loss_d = []
 
+    model.train_mode()
     for batch_idx, batch_data in enumerate(loader):
         logging.debug(f'Batch {batch_idx}/{len(loader)}')
         batch_data = batch_data.to(device)

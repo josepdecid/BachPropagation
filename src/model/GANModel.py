@@ -35,7 +35,7 @@ class GANModel:
         self.generator.train()
         self.discriminator.train()
 
-    def test_mode(self):
+    def eval_mode(self):
         self.generator.eval()
         self.discriminator.eval()
 
