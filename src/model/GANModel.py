@@ -45,12 +45,12 @@ class GANModel:
     def _generator_criterion(d_g_z: FloatTensor) -> FloatTensor:
         """
         Loss function for Generator G.
-        Calculates 1/m · ∑ log(1 - D(G(z))
+        Calculates 1/m · ∑ log(D(G(z))
         where *z* is the uniform random vector (noise) ∈ [0, 1]^T
         :param d_g_z: Tensor corresponding to the discriminator prediction D(G(z))
         :return: Loss of G
         """
-        return torch.mean(torch.log(1 - d_g_z))
+        return torch.mean(torch.log(d_g_z))
 
     @staticmethod
     def _discriminator_criterion(d_x: FloatTensor, d_g_z: FloatTensor) -> FloatTensor:

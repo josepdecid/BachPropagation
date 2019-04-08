@@ -61,12 +61,12 @@ def train_generator(model: GANModel, data):
     prediction = model.discriminator(fake_data)
 
     # Calculate gradients w.r.t parameters and backpropagate
-    loss = model.g_criterion(d_g_z=prediction)
-    (-loss).backward()
+    loss = -model.g_criterion(d_g_z=prediction)
+    loss.backward()
 
     # Update parameters
     model.g_optimizer.step()
-    return loss
+    return -loss
 
 
 def train_discriminator(model: GANModel, data):
@@ -88,13 +88,13 @@ def train_discriminator(model: GANModel, data):
     fake_predictions = model.discriminator(fake_data)
 
     # Calculate loss and optimize
-    loss = model.d_criterion(d_x=real_predictions, d_g_z=fake_predictions)
-    (-loss).backward()
+    loss = -model.d_criterion(d_x=real_predictions, d_g_z=fake_predictions)
+    loss.backward()
 
     # Update parameters
     model.d_optimizer.step()
 
-    return loss
+    return -loss
 
 
 def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
