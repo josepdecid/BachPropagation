@@ -143,7 +143,7 @@ def train(model: GANModel, dataset: MusicDataset):
             torch.save(model.generator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_G{epoch}.pt')
             torch.save(model.discriminator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_D{epoch}.pt')
 
-        plot_loss_evolution(generator_losses, discriminator_losses)
+    plot_loss_evolution(generator_losses, discriminator_losses)
 
 
 if __name__ == '__main__':
