@@ -42,27 +42,25 @@ class GANModel:
     # Loss functions
 
     @staticmethod
-    def _generator_criterion(predictions: FloatTensor) -> FloatTensor:
+    def _generator_criterion(d_g_z: FloatTensor) -> FloatTensor:
         """
         Loss function for Generator G.
         Calculates 1/m · ∑ log(1 - D(G(z))
         where *z* is the uniform random vector (noise) ∈ [0, 1]^T
-        :param predictions: Tensor corresponding to the discriminator prediction D(G(z))
+        :param d_g_z: Tensor corresponding to the discriminator prediction D(G(z))
         :return: Loss of G
         """
-        return torch.mean(torch.log(1 - predictions))
+        return torch.mean(torch.log(1 - d_g_z))
 
     @staticmethod
-    def _discriminator_criterion(real_predictions: FloatTensor, fake_predictions: FloatTensor) -> FloatTensor:
+    def _discriminator_criterion(d_x: FloatTensor, d_g_z: FloatTensor) -> FloatTensor:
         """
         Loss function for Discriminator D.
         Calculates 1/m · ∑ -log(D(x)) - log(1 - D(G(z))
         where *z* is the uniform random vector (noise) ∈ [0, 1]^T
         and *x* is the sequence of real training data
-        :param real_predictions: Tensor corresponding to the discriminator real prediction D(G(z))
-        :param fake_predictions: Tensor corresponding to the discriminator fake prediction D(x)
+        :param d_x: Tensor corresponding to the discriminator real prediction D(x)
+        :param d_g_z: Tensor corresponding to the discriminator fake prediction D(G(z))
         :return: Loss of D
         """
-        real_data_loss = -torch.log(real_predictions)
-        fake_data_loss = torch.log(1 - fake_predictions)
-        return torch.mean(real_data_loss - fake_data_loss)
+        return torch.mean(torch.log(d_x) + torch.log(1 - d_g_z))

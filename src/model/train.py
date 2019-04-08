@@ -42,7 +42,7 @@ def train_generator(model: GANModel, data):
 
     # Calculate gradients w.r.t parameters and backpropagate
     loss = model.g_criterion(prediction)
-    loss.backward()
+    (-loss).backward()
 
     # Update parameters
     model.g_optimizer.step()
@@ -69,7 +69,7 @@ def train_discriminator(model: GANModel, data):
 
     # Calculate loss and optimize
     loss = model.d_criterion(real_predictions, fake_predictions)
-    loss.backward()
+    (-loss).backward()
 
     # Update parameters
     model.d_optimizer.step()
