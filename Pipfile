@@ -15,6 +15,7 @@ flask = "*"
 tensorboardx = "*"
 tensorboard = "*"
 tensorflow = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3.7"

@@ -8,6 +8,7 @@ DATASET_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/dataset/processed'
 RAW_DATASET_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/dataset/raw'
 RESULTS_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/results/'
 CHECKPOINTS_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/checkpoints'
+LOG_PATH = os.getenv('BACHPROPAGATION_ROOT_PATH') + '/res/log'
 
 PPath = lambda p: Path(PROJECT_PATH + p)
 
@@ -19,7 +20,7 @@ MIN_NOTE = 21
 
 # HYPERPARAMETERS
 
-EPOCHS = 1000
+EPOCHS = 100
 BATCH_SIZE = 8
 MAX_POLYPHONY = 1
 SAMPLE_TIMES = 100

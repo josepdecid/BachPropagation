@@ -1,8 +1,9 @@
 import logging
 import sys
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, List
 
+import matplotlib.pyplot as plt
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
@@ -11,8 +12,10 @@ from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
-from utils.constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS
+from utils.constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, LOG_PATH
 from utils.tensors import device
+
+CURRENT_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 
 def generate_sample(model: GANModel, time_steps: int):
@@ -23,6 +26,23 @@ def generate_sample(model: GANModel, time_steps: int):
         sample_notes = sample_data.argmax(2)
 
         return sample_notes.view(-1)
+
+
+def plot_loss_evolution(gen_loss: List[float], disc_loss: List[float]):
+    x = list(range(1, EPOCHS + 1))
+
+    plt.figure(figsize=(10, 10))
+    plt.title('GAN losses for G and D')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+
+    plt.plot(x, gen_loss, label='G loss', color='darkgreen')
+    plt.plot(x, disc_loss, label='D loss', color='purple')
+
+    plt.grid(linewidth=0.1)
+    plt.legend()
+
+    plt.savefig(f'{LOG_PATH}/loss_plot_{CURRENT_TIME}.png', dpi=300)
 
 
 def train_generator(model: GANModel, data):
@@ -41,7 +61,7 @@ def train_generator(model: GANModel, data):
     prediction = model.discriminator(fake_data)
 
     # Calculate gradients w.r.t parameters and backpropagate
-    loss = model.g_criterion(prediction)
+    loss = model.g_criterion(d_g_z=prediction)
     (-loss).backward()
 
     # Update parameters
@@ -68,7 +88,7 @@ def train_discriminator(model: GANModel, data):
     fake_predictions = model.discriminator(fake_data)
 
     # Calculate loss and optimize
-    loss = model.d_criterion(real_predictions, fake_predictions)
+    loss = model.d_criterion(d_x=real_predictions, d_g_z=fake_predictions)
     (-loss).backward()
 
     # Update parameters
@@ -104,9 +124,15 @@ def train_epoch(model: GANModel, loader: DataLoader) -> Tuple[float, float]:
 
 def train(model: GANModel, dataset: MusicDataset):
     logging.info(f'Training the model...')
+    generator_losses = []
+    discriminator_losses = []
+
     for epoch in range(1, EPOCHS + 1):
         g_loss, d_loss = train_epoch(model=model, loader=dataset.get_dataloader(shuffle=True))
         print(f'Epoch {epoch:4} | Generator loss: {g_loss:.6f} ; Discriminator loss: {d_loss:.6f}')
+
+        generator_losses.append(g_loss)
+        discriminator_losses.append(d_loss)
 
         if epoch % SAMPLE_STEPS == 0:
             sample = generate_sample(model, dataset.longest_song).cpu().numpy()
@@ -116,6 +142,8 @@ def train(model: GANModel, dataset: MusicDataset):
             ts = str(datetime.now()).split('.')[0].replace(' ', '_')
             torch.save(model.generator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_G{epoch}.pt')
             torch.save(model.discriminator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_D{epoch}.pt')
+
+        plot_loss_evolution(generator_losses, discriminator_losses)
 
 
 if __name__ == '__main__':
