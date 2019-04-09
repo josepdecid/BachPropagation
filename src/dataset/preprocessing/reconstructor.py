@@ -7,7 +7,7 @@ from py_midicsv import csv_to_midi, FileWriter
 from utils.constants import RESULTS_PATH, SAMPLE_TIMES, MIN_NOTE
 
 
-def store_csv_to_midi(title: str, data: str) -> None:
+def store_csv_to_midi(title: str, data: str) -> str:
     """
     Parses and stores CSV data to a MIDI file.
     :param title: Title of the song (file).
@@ -26,6 +26,8 @@ def store_csv_to_midi(title: str, data: str) -> None:
             writer.write(midi_data)
 
     os.remove(file_path)
+
+    return f'{RESULTS_PATH}/{title}.mid'
 
 
 def parse_data(data: List[int]) -> str:
@@ -80,7 +82,7 @@ def series_to_csv(title: str, data: List[int]) -> str:
     return f'{header}\n{parse_data(data)}\n{footer}'
 
 
-def reconstruct_midi(title: str, data: List[int]) -> None:
+def reconstruct_midi(title: str, data: List[int]) -> str:
     """
     Parses the output of the GAN generator to a MIDI file.
     :param title: Title of the generated song.
@@ -90,4 +92,4 @@ def reconstruct_midi(title: str, data: List[int]) -> None:
 
     # TODO: Generalize for polyphony
     csv_data = series_to_csv(title=title, data=data)
-    store_csv_to_midi(title=title, data=csv_data)
+    return store_csv_to_midi(title=title, data=csv_data)

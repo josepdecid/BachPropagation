@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+visdom = "*"
 
 [packages]
 py-midicsv = "*"
@@ -12,10 +13,6 @@ tqdm = "*"
 torch = "*"
 torchvision = "*"
 flask = "*"
-tensorboardx = "*"
-tensorboard = "*"
-tensorflow = "*"
-matplotlib = "*"
 
 [requires]
 python_version = "3.7"

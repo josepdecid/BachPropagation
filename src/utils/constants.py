@@ -18,6 +18,10 @@ CKPT_STEPS = 100
 NUM_NOTES = 88
 MIN_NOTE = 21
 
+FLAGS = {
+    'viz': True
+}
+
 # HYPERPARAMETERS
 
 EPOCHS = 100
