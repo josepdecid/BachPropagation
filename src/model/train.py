@@ -40,7 +40,7 @@ class EpochMetric:
         self.d_loss = d_loss
 
     def print_metrics(self):
-        print(f'Epoch {self.epoch:4} | Generator loss: {self.g_loss:.6f} ; Discriminator loss: {self.d_loss:.6f}')
+        print(f'Generator loss: {self.g_loss:.6f} | Discriminator loss: {self.d_loss:.6f}')
 
     def plot_loss(self, vis):
         vis.plot_line('Loss', 'Generator', f'Model Loss', 'Loss', [self.epoch], [self.g_loss])
