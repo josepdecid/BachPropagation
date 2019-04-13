@@ -11,7 +11,7 @@ from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
 from constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL
-from utils.tensors import device
+from utils.tensors import device, zeros_target, ones_target
 
 
 class VisdomLinePlotter:
@@ -144,7 +144,7 @@ class Trainer:
         prediction = self.model.discriminator(fake_data)
 
         # Calculate gradients w.r.t parameters and backpropagate
-        loss = self.model.g_criterion(prediction, torch.ones(batch_size).to(device))
+        loss = self.model.g_criterion(prediction, ones_target((batch_size,)))
         loss.backward()
 
         # Update parameters
@@ -163,14 +163,14 @@ class Trainer:
 
         # Train on real data
         real_predictions = self.model.discriminator(real_data)
-        real_loss = self.model.d_criterion(real_predictions, torch.ones(batch_size).to(device))
+        real_loss = self.model.d_criterion(real_predictions, ones_target((batch_size,)))
         real_loss.backward()
 
         # Train on fake data
         noise_data = GANGenerator.noise((batch_size, time_steps, NUM_NOTES))
         fake_data = self.model.generator(noise_data).detach()
         fake_predictions = self.model.discriminator(fake_data)
-        fake_loss = self.model.d_criterion(fake_predictions, torch.zeros(batch_size).to(device))
+        fake_loss = self.model.d_criterion(fake_predictions, zeros_target((batch_size,)))
         fake_loss.backward()
 
         # Update parameters

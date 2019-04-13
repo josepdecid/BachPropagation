@@ -47,12 +47,12 @@ fi
 
 ngrok http "$VIS_PORT" > /dev/null &
 echo "> Tunneling URL with Ngrok"
+sleep 3
 
 WEB_HOOK_URL=$(curl --silent --connect-timeout 10 http://localhost:4040/api/tunnels | \
        pipenv run python -c "import json,sys;obj=json.load(sys.stdin);print(obj['tunnels'][0]['public_url'])")
 
 echo "Visdom tunneled in $WEB_HOOK_URL"
-
 
 # RUN MODEL
 
