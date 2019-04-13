@@ -5,7 +5,7 @@ from typing import List
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from utils.constants import DATASET_PATH, NUM_NOTES, BATCH_SIZE
+from constants import DATASET_PATH, NUM_NOTES, BATCH_SIZE
 from utils.tensors import use_cuda
 from utils.typings import File, FloatTensor
 
@@ -25,8 +25,7 @@ class MusicDataset(Dataset):
         self.padded_songs = self._apply_padding()
 
     def __getitem__(self, index: int) -> FloatTensor:
-        x = self.padded_songs[index]
-        return FloatTensor(x)
+        return self.padded_songs[index]
 
     def __len__(self) -> int:
         return len(self.songs)

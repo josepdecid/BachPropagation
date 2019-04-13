@@ -5,7 +5,7 @@ from urllib import request
 
 from bs4 import BeautifulSoup
 
-from utils.constants import RAW_DATASET_PATH, SOURCE_MIDI_URLS
+from constants import RAW_DATASET_PATH, SOURCE_MIDI_URLS
 
 logging.getLogger().setLevel(logging.INFO)
 

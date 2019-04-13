@@ -3,10 +3,9 @@ from typing import Tuple
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.autograd import Variable
 
 from model.RNN import RNN
-from utils.constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, NUM_NOTES, TYPE_G
+from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, NUM_NOTES, TYPE_G
 from utils.tensors import device
 
 
@@ -39,4 +38,4 @@ class GANGenerator(nn.Module):
         Generates a 2-d vector of uniform sampled random values.
         :param dims: Tuple with the dimensions of the data.
         """
-        return Variable(torch.randint(0, 2, dims, dtype=torch.float).to(device))
+        return torch.randint(0, 2, dims, dtype=torch.float).to(device)

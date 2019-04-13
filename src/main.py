@@ -7,7 +7,7 @@ import torch
 from dataset.MusicDataset import MusicDataset
 from model.GANModel import GANModel
 from model.train import Trainer
-from utils.constants import FLAGS
+from constants import FLAGS
 from utils.tensors import device
 
 

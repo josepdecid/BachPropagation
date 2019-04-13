@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import List
 
 import torch
-from torch.autograd import Variable
 from tqdm import tqdm
 from visdom import Visdom
 
@@ -11,10 +10,8 @@ from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.GANGenerator import GANGenerator
 from model.GANModel import GANModel
-from utils.constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS
+from constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL
 from utils.tensors import device
-
-CURRENT_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 
 class VisdomLinePlotter:
@@ -22,12 +19,14 @@ class VisdomLinePlotter:
         self.viz = Visdom(env='BachPropagation')
         self.plots = {}
 
-    def plot_line(self, plot, line, title, y_label, x, y, ):
+    def plot_line(self, plot, line, title, y_label, x, y, color=None):
         if plot not in self.plots:
-            self.plots[plot] = self.viz.line(X=x, Y=y, opts={'legend': [line], 'title': title,
-                                                             'xlabel': 'Epochs', 'ylabel': y_label})
+            opts = {'title': title, 'xlabel': 'Epochs', 'ylabel': y_label, 'linecolor': color}
+            if line is not None:
+                opts['legend'] = [line]
+            self.plots[plot] = self.viz.line(X=x, Y=y, opts=opts)
         else:
-            self.viz.line(X=x, Y=y, win=self.plots[plot], name=line, update='append')
+            self.viz.line(X=x, Y=y, win=self.plots[plot], name=line, update='append', opts={'linecolor': color})
 
     def add_song(self, path):
         self.viz.audio(audiofile=path, tensor=None)
@@ -43,8 +42,8 @@ class EpochMetric:
         print(f'Generator loss: {self.g_loss:.6f} | Discriminator loss: {self.d_loss:.6f}')
 
     def plot_loss(self, vis):
-        vis.plot_line('Loss', 'Generator', f'Model Loss', 'Loss', [self.epoch], [self.g_loss])
-        vis.plot_line('Loss', 'Discriminator', None, None, [self.epoch], [self.d_loss])
+        vis.plot_line('Loss', 'Generator', f'Model Loss', 'Loss', [self.epoch], [self.g_loss], PLOT_COL['G'])
+        vis.plot_line('Loss', 'Discriminator', None, None, [self.epoch], [self.d_loss], PLOT_COL['D'])
 
 
 class Trainer:
@@ -69,6 +68,10 @@ class Trainer:
 
             if FLAGS['viz']:
                 metric.plot_loss(self.vis)
+                self.vis.plot_line('LR_G', None, 'LR Generator', 'LR',
+                                   [epoch], [self.model.g_optimizer.param_groups[0]['lr']], PLOT_COL['G'])
+                self.vis.plot_line('LR_D', None, 'LR Discriminator', 'LR',
+                                   [epoch], [self.model.d_optimizer.param_groups[0]['lr']], PLOT_COL['D'])
             metric.print_metrics()
 
             if epoch % SAMPLE_STEPS == 0:
@@ -103,7 +106,7 @@ class Trainer:
 
         batch_data = enumerate(tqdm(self.loader, desc=f'Epoch {epoch}: ', ncols=100))
         for batch_idx, features in batch_data:
-            features = features.to(device)
+            features = features.requires_grad_().to(device)
 
             # if current_loss_d >= 0.7 * current_loss_g:
             d_loss = self._train_discriminator(features)
@@ -117,6 +120,10 @@ class Trainer:
 
         g_loss = sum(sum_loss_g) / len(sum_loss_g)
         d_loss = sum(sum_loss_d) / len(sum_loss_d)
+
+        self.model.g_scheduler.step(metrics=g_loss)
+        self.model.d_scheduler.step(metrics=d_loss)
+
         return EpochMetric(epoch, g_loss, d_loss)
 
     def _train_generator(self, data):
@@ -143,17 +150,16 @@ class Trainer:
 
         return -(loss.item())
 
-    def _train_discriminator(self, data) -> float:
+    def _train_discriminator(self, real_data) -> float:
         logging.debug('Training Discriminator')
 
-        batch_size = data.size(0)
-        time_steps = data.size(1)
+        batch_size = real_data.size(0)
+        time_steps = real_data.size(1)
 
         # Reset gradients
         self.model.d_optimizer.zero_grad()
 
         # Train on real data
-        real_data = Variable(data)
         real_predictions = self.model.discriminator(real_data)
 
         # Train on fake data

@@ -1,12 +1,13 @@
 import logging
 
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from model.GANDiscriminator import GANDiscriminator
 from model.GANGenerator import GANGenerator
-from utils.constants import LR_G, L2_G, L2_D, LR_D
+from constants import LR_G, L2_G, L2_D, LR_D, LR_PAT_D, LR_PAT_G
 from utils.tensors import device
-from utils.typings import NNet, Optimizer, Criterion, FloatTensor
+from utils.typings import NNet, Optimizer, Criterion, FloatTensor, Scheduler
 
 
 class GANModel:
@@ -15,19 +16,13 @@ class GANModel:
 
         self.generator: NNet = GANGenerator().to(device)
         self.g_optimizer: Optimizer = torch.optim.Adam(self.generator.parameters(), lr=LR_G, weight_decay=L2_G)
+        self.g_scheduler: Scheduler = ReduceLROnPlateau(self.g_optimizer, mode='min', patience=LR_PAT_G)
         self.g_criterion: Criterion = GANModel._generator_criterion
 
         self.discriminator: NNet = GANDiscriminator().to(device)
         self.d_optimizer: Optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=LR_D, weight_decay=L2_D)
+        self.d_scheduler: Scheduler = ReduceLROnPlateau(self.d_optimizer, mode='min', patience=LR_PAT_D)
         self.d_criterion: Criterion = GANModel._discriminator_criterion
-
-        # with SummaryWriter(log_dir=f'{PROJECT_PATH}/res/log', comment='Generator') as w:
-        #     h = self.generator(Variable(torch.zeros(BATCH_SIZE, 42, MAX_POLYPHONY), requires_grad=True))
-        #     w.add_graph(self.generator, h)
-
-        # with SummaryWriter(log_dir=f'{PROJECT_PATH}/res/log', comment='Discriminator') as w:
-        #     h = self.discriminator(Variable(torch.zeros(BATCH_SIZE, 42, MAX_POLYPHONY), requires_grad=True))
-        #     w.add_graph(self.discriminator, h)
 
     # PyTorch working modes
 

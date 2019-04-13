@@ -4,7 +4,7 @@ from typing import List
 
 from py_midicsv import csv_to_midi, FileWriter
 
-from utils.constants import RESULTS_PATH, SAMPLE_TIMES, MIN_NOTE
+from constants import RESULTS_PATH, SAMPLE_TIMES, MIN_NOTE
 
 
 def store_csv_to_midi(title: str, data: str) -> str:
