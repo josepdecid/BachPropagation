@@ -36,7 +36,7 @@ MAX_POLYPHONY = 1
 SAMPLE_TIMES = 100
 
 # Generator
-LR_G = 0.1
+LR_G = 0.4
 LR_PAT_G = 10
 L2_G = 0.25
 HIDDEN_DIM_G = 150
@@ -45,7 +45,7 @@ TYPE_G = 'LSTM'
 LAYERS_G = 1
 
 # Discriminator
-LR_D = 0.1
+LR_D = 0.4
 LR_PAT_D = 10
 L2_D = 0.25
 HIDDEN_DIM_D = 150
