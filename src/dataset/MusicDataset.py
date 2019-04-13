@@ -47,7 +47,7 @@ class MusicDataset(Dataset):
         padded_songs = []
         for song in self.songs:
             padded_song = torch.zeros((self.longest_song, NUM_NOTES), dtype=torch.float)
-            padded_song[:len(song), :] = FloatTensor(song)
+            padded_song[:len(song), :] = torch.tensor(song)
             padded_songs.append(padded_song)
         return padded_songs
 

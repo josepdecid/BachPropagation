@@ -106,7 +106,7 @@ class Trainer:
 
         batch_data = enumerate(tqdm(self.loader, desc=f'Epoch {epoch}: ', ncols=100))
         for batch_idx, features in batch_data:
-            features = features.requires_grad_().to(device)
+            features = features.to(device)
 
             # if current_loss_d >= 0.7 * current_loss_g:
             d_loss = self._train_discriminator(features)
@@ -142,13 +142,13 @@ class Trainer:
         prediction = self.model.discriminator(fake_data)
 
         # Calculate gradients w.r.t parameters and backpropagate
-        loss = -self.model.g_criterion(d_g_z=prediction)
+        loss = self.model.g_criterion(prediction, torch.ones(batch_size))
         loss.backward()
 
         # Update parameters
         self.model.g_optimizer.step()
 
-        return -(loss.item())
+        return loss.item()
 
     def _train_discriminator(self, real_data) -> float:
         logging.debug('Training Discriminator')
@@ -161,17 +161,17 @@ class Trainer:
 
         # Train on real data
         real_predictions = self.model.discriminator(real_data)
+        real_loss = self.model.d_criterion(real_predictions, torch.ones(batch_size))
+        real_loss.backward()
 
         # Train on fake data
         noise_data = GANGenerator.noise((batch_size, time_steps, NUM_NOTES))
         fake_data = self.model.generator(noise_data).detach()
         fake_predictions = self.model.discriminator(fake_data)
-
-        # Calculate loss and optimize
-        loss = -self.model.d_criterion(d_x=real_predictions, d_g_z=fake_predictions)
-        loss.backward()
+        fake_loss = self.model.d_criterion(fake_predictions, torch.zeros(batch_size))
+        fake_loss.backward()
 
         # Update parameters
         self.model.d_optimizer.step()
 
-        return -(loss.item())
+        return (real_loss + fake_loss).item()

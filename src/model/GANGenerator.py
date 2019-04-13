@@ -38,4 +38,4 @@ class GANGenerator(nn.Module):
         Generates a 2-d vector of uniform sampled random values.
         :param dims: Tuple with the dimensions of the data.
         """
-        return torch.randint(0, 2, dims, dtype=torch.float).to(device)
+        return torch.randn(dims, dtype=torch.float).to(device)
