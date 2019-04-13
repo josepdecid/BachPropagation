@@ -62,6 +62,8 @@ class Trainer:
 
     def train(self):
         logging.info(f'Training the model...')
+        logging.info(f'Generator model {self.model.generator}')
+        logging.info(f'Discriminator model {self.model.discriminator}')
 
         for epoch in range(1, EPOCHS + 1):
             metric = self._train_epoch(epoch)
