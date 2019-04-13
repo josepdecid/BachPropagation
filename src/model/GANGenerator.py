@@ -25,12 +25,22 @@ class GANGenerator(nn.Module):
                        bidirectional=BIDIRECTIONAL_G).to(device)
 
         dense_input_features = (2 if BIDIRECTIONAL_G else 1) * HIDDEN_DIM_G
-        self.dense = nn.Linear(in_features=dense_input_features, out_features=NUM_NOTES)
+        self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=2 * NUM_NOTES)
+        self.dense_2 = nn.Linear(in_features=2 * NUM_NOTES, out_features=NUM_NOTES)
 
     def forward(self, x):
-        x, _ = self.rnn(x)
-        x = self.dense(x)
-        return F.softmax(x, dim=1)
+        x, _ = self.rnn(x, )
+        x = F.leaky_relu(x)
+        x = F.dropout(x)
+
+        x = self.dense_1(x)
+        x = F.leaky_relu(x)
+        x = F.dropout(x)
+
+        x = self.dense_2(x)
+        x = F.softmax(x, dim=1)
+
+        return x
 
     @staticmethod
     def noise(dims: Tuple):

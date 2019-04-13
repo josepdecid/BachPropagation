@@ -4,11 +4,11 @@ import torch
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
+from constants import LR_G, L2_G, L2_D, LR_D, LR_PAT_D, LR_PAT_G
 from model.GANDiscriminator import GANDiscriminator
 from model.GANGenerator import GANGenerator
-from constants import LR_G, L2_G, L2_D, LR_D, LR_PAT_D, LR_PAT_G
 from utils.tensors import device
-from utils.typings import NNet, Optimizer, Criterion, FloatTensor, Scheduler
+from utils.typings import NNet, Optimizer, Criterion, Scheduler
 
 
 class GANModel:
