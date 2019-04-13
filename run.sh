@@ -57,5 +57,5 @@ echo "Visdom tunneled in $WEB_HOOK_URL"
 # RUN MODEL
 echo ${BACHPROPAGATION_ROOT_PATH}
 
-pipenv run python src/main.py
+pipenv run python src/main.py --viz
 
