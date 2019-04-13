@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Default parameters
-BP_PATH="$HOME/bp"
+BP_PATH="$HOME/BP"
 VIS_PORT=8097
 
 while [[ $# -gt 0 ]]; do
@@ -26,7 +26,7 @@ echo "> Exported ENV variables"
 
 # VISDOM VISUALIZATION
 
-if lsof -Pi :8097 -sTCP:LISTEN -t >/dev/null ; then
+if lsof -Pi :"$VIS_PORT" -sTCP:LISTEN -t >/dev/null ; then
     while : ; do
         printf "Visdom server already running, do you want to restart it? [Y/N]: "; read -r restart
         [[ "$restart" == "Y" || "$restart" == "N" ]] && break
@@ -35,17 +35,17 @@ if lsof -Pi :8097 -sTCP:LISTEN -t >/dev/null ; then
 
     if [[ "$restart" = "Y" ]]; then
         kill $(lsof -t -i:8097)
-        visdom -logging_level ERROR -port 8097 > /dev/null &
+        visdom -logging_level ERROR -port "$VIS_PORT" > /dev/null &
         echo "> Restarted Visdom server"
     fi
 else
-    visdom -logging_level ERROR -port 8097 > /dev/null &
+    visdom -logging_level ERROR -port "$VIS_PORT" > /dev/null &
     echo "> Started Visdom server"
 fi
 
 # NGROK TUNNELING
 
-ngrok http 8097 > /dev/null &
+ngrok http "$VIS_PORT" > /dev/null &
 echo "> Tunneling URL with Ngrok"
 
 WEB_HOOK_URL=$(curl --silent --connect-timeout 10 http://localhost:4040/api/tunnels | \
@@ -55,7 +55,6 @@ echo "Visdom tunneled in $WEB_HOOK_URL"
 
 
 # RUN MODEL
-echo ${BACHPROPAGATION_ROOT_PATH}
 
 pipenv run python src/main.py --viz
 
