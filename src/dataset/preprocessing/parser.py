@@ -66,6 +66,7 @@ def csv_to_series(song: Song) -> List[Tuple[float, int, int]]:
     """
     ts_data = []
     last_start = None
+    note_max_start = song.max_time
 
     # Index of current treated element for each track as those are already sorted.
     track_time_indices: Union[int, None] = [0] * song.number_tracks
@@ -74,7 +75,6 @@ def csv_to_series(song: Song) -> List[Tuple[float, int, int]]:
 
     while True:
         # Get first note to be played
-        note_max_start = song.max_time
         first_note_idx = None
         for track_idx, note in enumerate(current_notes):
             if note is not None and note.note_start < note_max_start:

@@ -1,10 +1,9 @@
 import logging
 import os
 
-import numpy as np
 from py_midicsv import csv_to_midi, FileWriter
 
-from constants import RESULTS_PATH, DATASET_PATH, MAX_POLYPHONY, MAX_FREQ_NOTE
+from constants import RESULTS_PATH, MAX_POLYPHONY, MAX_FREQ_NOTE
 from utils.music import freq_to_note
 from utils.typings import NDArray
 
@@ -27,7 +26,7 @@ def store_csv_to_midi(title: str, csv_data: str) -> str:
             writer = FileWriter(g)
             writer.write(midi_data)
 
-    # os.remove(file_path)
+    os.remove(file_path)
 
     return f'{RESULTS_PATH}/{title}.mid'
 
@@ -55,7 +54,7 @@ def parse_data(notes_data: NDArray) -> str:
 
         track_idx = None
         for idx in range(len(last_time_track_played)):
-            if end_time >= last_time_track_played[idx]:
+            if start_time >= last_time_track_played[idx]:
                 track_idx = idx
                 last_time_track_played[idx] = end_time
                 break
@@ -115,9 +114,3 @@ def reconstruct_midi(title: str, raw_data: NDArray) -> str:
 
     csv_data = series_to_csv(title=title, data=raw_data)
     return store_csv_to_midi(title=title, csv_data=csv_data)
-
-
-with open(f'{DATASET_PATH}/BWV_810_01_midi.txt') as f:
-    data = f.read().strip().split('\n')
-    data = np.array(list(map(lambda x: x.split(), data)))
-    reconstruct_midi('TESTTTTT', data)
