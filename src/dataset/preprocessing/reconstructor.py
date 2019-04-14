@@ -1,10 +1,10 @@
 import logging
 import os
-from typing import List
 
 from py_midicsv import csv_to_midi, FileWriter
 
 from constants import RESULTS_PATH, SAMPLE_TIMES, MIN_NOTE
+from utils.typings import NDArray
 
 
 def store_csv_to_midi(title: str, data: str) -> str:
@@ -13,7 +13,7 @@ def store_csv_to_midi(title: str, data: str) -> str:
     :param title: Title of the song (file).
     :param data: CSV string data of the song.
     """
-    logging.info(f'Writing MIDI file at {RESULTS_PATH}')
+    logging.info(f'Writing MIDI file at {RESULTS_PATH}{title}')
 
     file_path = f'{RESULTS_PATH}/{title}.txt'
     with open(file_path, mode='w') as f:
@@ -30,7 +30,7 @@ def store_csv_to_midi(title: str, data: str) -> str:
     return f'{RESULTS_PATH}/{title}.mid'
 
 
-def parse_data(data: List[int]) -> str:
+def parse_data(data: NDArray) -> str:
     """
     Parses song data to CSV format with MIDI event format.
     :param data: List of the note played in each time step.
@@ -42,6 +42,7 @@ def parse_data(data: List[int]) -> str:
     csv_data = []
 
     # TODO: Generalize for polyphony
+    start_time = 0
     for time_step, note in enumerate(data):
         if note != current_note:
             if current_note is not None:
@@ -57,7 +58,7 @@ def parse_data(data: List[int]) -> str:
     return '\n'.join(csv_data)
 
 
-def series_to_csv(title: str, data: List[int]) -> str:
+def series_to_csv(title: str, data: NDArray) -> str:
     """
     Parses the output of the GAN generator to a CSV with the required format.
     :param title: Title of the song.
@@ -82,7 +83,7 @@ def series_to_csv(title: str, data: List[int]) -> str:
     return f'{header}\n{parse_data(data)}\n{footer}'
 
 
-def reconstruct_midi(title: str, data: List[int]) -> str:
+def reconstruct_midi(title: str, data: NDArray) -> str:
     """
     Parses the output of the GAN generator to a MIDI file.
     :param title: Title of the generated song.

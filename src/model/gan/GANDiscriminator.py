@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from model.RNN import RNN
+from model.gan.RNN import RNN
 from constants import LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, NUM_NOTES, TYPE_D
 from utils.tensors import device
 
