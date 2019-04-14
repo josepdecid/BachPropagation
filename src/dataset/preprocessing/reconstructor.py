@@ -1,9 +1,11 @@
 import logging
 import os
 
+import numpy as np
 from py_midicsv import csv_to_midi, FileWriter
 
-from constants import RESULTS_PATH, SAMPLE_TIMES, MIN_NOTE
+from constants import RESULTS_PATH, SAMPLE_TIMES, DATASET_PATH, MAX_POLYPHONY
+from utils.music import freq_to_note
 from utils.typings import NDArray
 
 
@@ -30,32 +32,43 @@ def store_csv_to_midi(title: str, data: str) -> str:
     return f'{RESULTS_PATH}/{title}.mid'
 
 
-def parse_data(data: NDArray) -> str:
+def parse_data(notes_data: NDArray) -> str:
     """
     Parses song data to CSV format with MIDI event format.
-    :param data: List of the note played in each time step.
+    :param notes_data: List of the note played in each time step.
     :return: String containing the CSV data of the notes
     """
     logging.info('Parsing note data...')
 
-    current_note = None
-    csv_data = []
+    start_times = [0] * MAX_POLYPHONY
+    current_notes = [0] * MAX_POLYPHONY
+    csv_data_tracks = [[f'{idx + 2}, 0, Start_track'] for idx in range(MAX_POLYPHONY)]
 
     # TODO: Generalize for polyphony
-    start_time = 0
-    for time_step, note in enumerate(data):
-        if note != current_note:
-            if current_note is not None:
-                csv_data.append(f'2, {start_time * SAMPLE_TIMES}, Note_on_c, 0, {note + MIN_NOTE}, 64\n'
-                                f'2, {time_step * SAMPLE_TIMES}, Note_off_c, 0, {note + MIN_NOTE}, 0')
+    start_times = [0] * MAX_POLYPHONY
+    for time_step, freqs in enumerate(notes_data):
+        notes = list(map(freq_to_note, freqs))
+        for idx, note in enumerate(notes):
+            if note != current_notes[idx]:
+                if current_notes[idx] > 0:
+                    channel = idx if idx < 10 else idx + 1
+                    csv_data_tracks[idx].append(
+                        f'{idx + 2}, {start_times[idx] * SAMPLE_TIMES}, Note_on_c, {channel}, {note}, 64\n' +
+                        f'{idx + 2}, {time_step * SAMPLE_TIMES}, Note_off_c, {channel}, {note}, 0'
+                    )
 
-            if note != 0:
-                start_time = time_step
-                current_note = note
-            else:  # Silence
-                current_note = None
+                if note != 0:
+                    start_times[idx] = time_step
+                    current_notes[idx] = note
+                else:  # Silence
+                    current_notes[idx] = 0
 
-    return '\n'.join(csv_data)
+    data_tracks = []
+    for idx in range(len(csv_data_tracks)):
+        csv_data_tracks[idx].append(f'{idx + 2}, 10000, End_track')
+        data_tracks.append('\n'.join(csv_data_tracks[idx]))
+
+    return '\n'.join(data_tracks)
 
 
 def series_to_csv(title: str, data: NDArray) -> str:
@@ -67,17 +80,17 @@ def series_to_csv(title: str, data: NDArray) -> str:
     """
     logging.info('Converting to CSV...')
 
-    header = ['0, 0, Header, 1, 2, 480',
+    header = [f'0, 0, Header, 1, {MAX_POLYPHONY}, 384',
               '1, 0, Start_track',
-              '1, 0, Title_t, "' + title + '"',
+              f'1, 0, Title_t, "{title}"',
               '1, 0, Time_signature, 4, 2, 24, 8',
-              '1, 0, Tempo, 500000',
+              '1, 0, Tempo, 550000',
               '1, 0, End_track',
               '2, 0, Start_track',
               '2, 0, Text_t, "RH"']
     header = '\n'.join(header)
 
-    footer = ['2, 4800, End_track', '0, 0, End_of_file']
+    footer = ['0, 0, End_of_file']
     footer = '\n'.join(footer)
 
     return f'{header}\n{parse_data(data)}\n{footer}'
