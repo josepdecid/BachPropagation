@@ -22,6 +22,6 @@ def freq_to_note(note_freq: float) -> int:
     """
     if note_freq > 0:
         note_freq = max(MIN_FREQ_NOTE, min(note_freq, MAX_FREQ_NOTE))
-        return int(12 * math.log2(note_freq / 440)) + 69
+        return round(12 * math.log2(note_freq / 440)) + 69
     else:
         return 0

@@ -1,5 +1,8 @@
 from typing import List
 
+from constants import MAX_FREQ_NOTE
+from utils.music import note_to_freq
+
 
 class NoteData(object):
     def __init__(self, start: int, end: int, note: int, velocity: int):
@@ -16,8 +19,16 @@ class NoteData(object):
         return self.velocity / 127.0
 
     @property
-    def enc_note(self) -> str:
-        raise NotImplementedError
+    def freq(self) -> float:
+        return note_to_freq(self.note)
+
+    @property
+    def norm_freq(self) -> float:
+        return self.freq / MAX_FREQ_NOTE
+
+    @property
+    def duration(self) -> int:
+        return self.note_end - self.note_start
 
     def is_playing(self, time: int) -> bool:
         # return self.note_start <= time <= self.note_end

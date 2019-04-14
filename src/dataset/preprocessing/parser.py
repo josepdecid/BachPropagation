@@ -1,14 +1,13 @@
 import glob
 import logging
 import re
-from typing import List, Dict
+from typing import List, Dict, Tuple, Union
 
 from py_midicsv import midi_to_csv
 from tqdm import tqdm
 
-from constants import RAW_DATASET_PATH, DATASET_PATH, SAMPLE_TIMES, MAX_POLYPHONY, MAX_FREQ_NOTE
+from constants import RAW_DATASET_PATH, DATASET_PATH, MAX_POLYPHONY
 from dataset.Music import Song, Track, NoteData
-from utils.music import note_to_freq
 
 
 def csv_cleaner(data: List[str]) -> Song:
@@ -53,56 +52,53 @@ def csv_cleaner(data: List[str]) -> Song:
             tracks.append(Track(notes_data))
             notes_data = []
             current_notes = {}
+            if len(tracks) >= MAX_POLYPHONY:
+                break
 
     return Song(tracks)
 
 
-def csv_to_series(song: Song) -> List[List[int]]:
+def csv_to_series(song: Song) -> List[Tuple[float, int, int]]:
     """
-
-    :param song:
-    :return:
+    Converts song data to time series data.
+    :param song: Song data.
+    :return: Sequence of (NoteFrequency, Duration, TimeSincePrevious).
     """
-    # Index of current treated element for each track.
-    track_time_indices = [0] * song.number_tracks
+    ts_data = []
+    last_start = None
 
-    # Get max time of last Note data of all tracks.
-    max_time = song.max_time // SAMPLE_TIMES
-    series_data = [[] for _ in range(max_time)]
+    # Index of current treated element for each track as those are already sorted.
+    track_time_indices: Union[int, None] = [0] * song.number_tracks
+    current_notes: List[Union[NoteData, None]] = [song.get_track(idx).get_note_data(track_time_indices[idx])
+                                                  for idx in range(song.number_tracks)]
 
-    time_idx = 0
-    while time_idx < max_time:
-        for track_idx, track_time_idx in enumerate(track_time_indices):
-            # Skip if track already finished
-            if track_time_indices[track_idx] >= song.get_track(track_idx).len_track:
-                continue
+    while True:
+        # Get first note to be played
+        note_max_start = song.max_time
+        first_note_idx = None
+        for track_idx, note in enumerate(current_notes):
+            if note is not None and note.note_start < note_max_start:
+                note_max_start = note.note_start
+                first_note_idx = track_idx
+        if first_note_idx is None:
+            break
+        else:
+            first_note = current_notes[first_note_idx]
 
-            # Add note to current time step if it's being played
-            note_data = song.get_track(track_idx).get_note_data(track_time_idx)
-            if note_data.is_playing(time_idx * SAMPLE_TIMES):
-                # Add as maximum MAX_POLYPHONY notes for each step
-                if len(series_data[time_idx]) >= MAX_POLYPHONY:
-                    continue
-                series_data[time_idx].append(note_data.note)
+        # Add id to the time series data
+        time_since_last = first_note.note_start - last_start if last_start is not None else 0
+        ts_data.append((first_note.norm_freq, first_note.duration, time_since_last))
+        last_start = first_note.note_start
 
-            # Check if note won't be played on next time step
-            if not note_data.is_playing((time_idx + 1) * SAMPLE_TIMES):
-                track_time_indices[track_idx] += 1
+        # Update that note and discard finished tracks
+        track_time_indices[first_note_idx] += 1
+        if track_time_indices[first_note_idx] >= song.get_track(first_note_idx).len_track:
+            current_notes[first_note_idx] = None
+        else:
+            current_notes[first_note_idx] = song.get_track(first_note_idx) \
+                .get_note_data(track_time_indices[first_note_idx])
 
-        time_idx += 1
-
-    return series_data
-
-
-def notes_to_freq(series: List[List[int]]) -> List[List[float]]:
-    notes_freqs = []
-    for notes in series:
-        freqs = [0.0] * MAX_POLYPHONY
-        for idx, note in enumerate(notes):
-            # Normalize in [0, 1] dividing by frequency of the highest note
-            freqs[idx] = (note_to_freq(note) / MAX_FREQ_NOTE)
-        notes_freqs.append(freqs)
-    return notes_freqs
+    return ts_data
 
 
 if __name__ == '__main__':
@@ -119,11 +115,8 @@ if __name__ == '__main__':
     logging.info('Converting information to time series...')
     time_series = list(map(csv_to_series, tqdm(csv_preprocessed, ncols=150)))
 
-    logging.info('One-hot encoding notes...')
-    input_notes = list(map(notes_to_freq, tqdm(time_series, ncols=150)))
-
     logging.info('Writing note features ...')
-    for path, time_steps in tqdm(zip(files, input_notes), ncols=150):
+    for path, time_steps in tqdm(zip(files, time_series), ncols=150):
         file = path.split('/')[-1][:-4] + '.txt'
         with open(f'{DATASET_PATH}/{file}', mode='w') as f:
             for ts in time_steps:

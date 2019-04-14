@@ -4,22 +4,22 @@ import os
 import numpy as np
 from py_midicsv import csv_to_midi, FileWriter
 
-from constants import RESULTS_PATH, SAMPLE_TIMES, DATASET_PATH, MAX_POLYPHONY, MAX_FREQ_NOTE
+from constants import RESULTS_PATH, DATASET_PATH, MAX_POLYPHONY, MAX_FREQ_NOTE
 from utils.music import freq_to_note
 from utils.typings import NDArray
 
 
-def store_csv_to_midi(title: str, data: str) -> str:
+def store_csv_to_midi(title: str, csv_data: str) -> str:
     """
     Parses and stores CSV data to a MIDI file.
     :param title: Title of the song (file).
-    :param data: CSV string data of the song.
+    :param csv_data: CSV string data of the song.
     """
     logging.info(f'Writing MIDI file at {RESULTS_PATH}{title}')
 
-    file_path = f'{RESULTS_PATH}/{title}.txt'
+    file_path = f'{RESULTS_PATH}/{title}.csv'
     with open(file_path, mode='w') as f:
-        f.write(data)
+        f.write(csv_data)
 
     with open(file_path, mode='r') as f:
         midi_data = csv_to_midi(f)
@@ -27,7 +27,7 @@ def store_csv_to_midi(title: str, data: str) -> str:
             writer = FileWriter(g)
             writer.write(midi_data)
 
-    os.remove(file_path)
+    # os.remove(file_path)
 
     return f'{RESULTS_PATH}/{title}.mid'
 
@@ -40,30 +40,41 @@ def parse_data(notes_data: NDArray) -> str:
     """
     logging.info('Parsing note data...')
 
-    start_times = [0] * MAX_POLYPHONY
-    current_notes = [0] * MAX_POLYPHONY
+    last_time, end_time = 0, 0
+    last_time_track_played = [0] * MAX_POLYPHONY
     csv_data_tracks = [[f'{idx + 2}, 0, Start_track'] for idx in range(MAX_POLYPHONY)]
 
-    for time_step, freqs in enumerate(notes_data):
-        notes = list(map(lambda x: freq_to_note(x * MAX_FREQ_NOTE), freqs))
-        for idx, note in enumerate(notes):
-            if note != current_notes[idx]:
-                if current_notes[idx] > 0:
-                    channel = idx if idx < 10 else idx + 1
-                    csv_data_tracks[idx].append(
-                        f'{idx + 2}, {start_times[idx] * SAMPLE_TIMES}, Note_on_c, {channel}, {note}, 64\n' +
-                        f'{idx + 2}, {time_step * SAMPLE_TIMES}, Note_off_c, {channel}, {note}, 0'
-                    )
+    for note_data in notes_data:
+        note = freq_to_note(float(note_data[0]) * MAX_FREQ_NOTE)
+        duration = int(note_data[1])
+        time_since_previous = int(note_data[2])
 
-                if note != 0:
-                    start_times[idx] = time_step
-                    current_notes[idx] = note
-                else:  # Silence
-                    current_notes[idx] = 0
+        start_time = last_time + time_since_previous
+        end_time = start_time + duration
+        last_time = start_time
+
+        track_idx = None
+        for idx in range(len(last_time_track_played)):
+            if end_time >= last_time_track_played[idx]:
+                track_idx = idx
+                last_time_track_played[idx] = end_time
+                break
+
+        if track_idx is None:
+            continue
+
+        channel = track_idx if track_idx < 10 else track_idx + 1
+
+        csv_data_tracks[track_idx].append(
+            f'{track_idx + 2}, {start_time}, Note_on_c, {channel}, {note}, 64\n' +
+            f'{track_idx + 2}, {end_time}, Note_off_c, {channel}, {note}, 0'
+        )
 
     data_tracks = []
     for idx in range(len(csv_data_tracks)):
-        csv_data_tracks[idx].append(f'{idx + 2}, 10000, End_track')
+        if len(csv_data_tracks[idx]) == 1:
+            continue
+        csv_data_tracks[idx].append(f'{idx + 2}, {last_time_track_played[idx]}, End_track')
         data_tracks.append('\n'.join(csv_data_tracks[idx]))
 
     return '\n'.join(data_tracks)
@@ -102,6 +113,11 @@ def reconstruct_midi(title: str, raw_data: NDArray) -> str:
     """
     logging.info(f'Creating {title}')
 
-    # TODO: Generalize for polyphony
     csv_data = series_to_csv(title=title, data=raw_data)
-    return store_csv_to_midi(title=title, data=csv_data)
+    return store_csv_to_midi(title=title, csv_data=csv_data)
+
+
+with open(f'{DATASET_PATH}/BWV_810_01_midi.txt') as f:
+    data = f.read().strip().split('\n')
+    data = np.array(list(map(lambda x: x.split(), data)))
+    reconstruct_midi('TESTTTTT', data)
