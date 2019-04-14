@@ -5,8 +5,8 @@ from typing import List
 import torch
 from tqdm import tqdm
 
-from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, \
-    SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D, MAX_POLYPHONY
+from constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, \
+    SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D
 from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.gan.GANGenerator import GANGenerator
@@ -97,6 +97,7 @@ class Trainer:
         self.model.train_mode()
 
         sum_loss_g = 0
+        sum_loss_d = 0
 
         batch_data = enumerate(tqdm(self.loader, desc=f'Epoch {epoch}: ', ncols=100))
         for batch_idx, features in batch_data:
@@ -106,8 +107,13 @@ class Trainer:
             g_loss = self._train_generator(real_data=features, pretraining=True)
             sum_loss_g += g_loss * batch_size
 
+            d_loss = self._train_discriminator(real_data=features, pretraining=True)
+            sum_loss_d += d_loss * batch_size
+
         g_loss = sum_loss_g / len(self.loader.dataset)
-        return EpochMetric(epoch, g_loss, None)
+        d_loss = sum_loss_d / len(self.loader.dataset)
+
+        return EpochMetric(epoch, g_loss, d_loss)
 
     def _train_epoch(self, epoch: int) -> EpochMetric:
         """
@@ -176,7 +182,7 @@ class Trainer:
 
         return loss.item()
 
-    def _train_discriminator(self, real_data: FloatTensor) -> float:
+    def _train_discriminator(self, real_data: FloatTensor, pretraining=False) -> float:
         """
         Train GAN Discriminator performing an optimizer step.
         :param real_data: Real inputs from the dataset
@@ -190,10 +196,18 @@ class Trainer:
         # Reset gradients
         self.model.d_optimizer.zero_grad()
 
-        # Train on real data
+        #Predictions on real data
         real_predictions = self.model.discriminator(real_data)
-        real_loss = self.model.training_criterion(real_predictions, ones_target((batch_size,)))
-        real_loss.backward()
+
+        if pretraining:
+            real_loss = self.model.pretraining_discriminator_criterion(real_predictions, torch.ones(real_predictions.shape))
+            real_loss.backward()
+            fake_loss = 0.
+
+        else:
+            # Train on real data
+            real_loss = self.model.training_criterion(real_predictions, ones_target((batch_size,)))
+            real_loss.backward()
 
         # Train on fake data
         noise_data = GANGenerator.noise((batch_size, time_steps))
@@ -202,7 +216,7 @@ class Trainer:
         fake_loss = self.model.training_criterion(fake_predictions, zeros_target((batch_size,)))
         fake_loss.backward()
 
-        # Update parameters
-        self.model.d_optimizer.step()
+            # Update parameters
+            self.model.d_optimizer.step()
 
         return (real_loss + fake_loss).item()
