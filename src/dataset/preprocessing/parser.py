@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Union
 from py_midicsv import midi_to_csv
 from tqdm import tqdm
 
-from constants import RAW_DATASET_PATH, DATASET_PATH, MAX_POLYPHONY
+from constants import RAW_DATASET_PATH, DATASET_PATH, MAX_POLYPHONY, NORMALIZE_FREQ
 from dataset.Music import Song, Track, NoteData
 
 
@@ -66,7 +66,6 @@ def csv_to_series(song: Song) -> List[Tuple[float, int, int]]:
     """
     ts_data = []
     last_start = None
-    note_max_start = song.max_time
 
     # Index of current treated element for each track as those are already sorted.
     track_time_indices: Union[int, None] = [0] * song.number_tracks
@@ -75,6 +74,7 @@ def csv_to_series(song: Song) -> List[Tuple[float, int, int]]:
 
     while True:
         # Get first note to be played
+        note_max_start = song.max_time
         first_note_idx = None
         for track_idx, note in enumerate(current_notes):
             if note is not None and note.note_start < note_max_start:
@@ -87,7 +87,8 @@ def csv_to_series(song: Song) -> List[Tuple[float, int, int]]:
 
         # Add id to the time series data
         time_since_last = first_note.note_start - last_start if last_start is not None else 0
-        ts_data.append((first_note.norm_freq, first_note.duration, time_since_last))
+        ts_data.append((first_note.norm_freq if NORMALIZE_FREQ else first_note.freq,
+                        first_note.duration, time_since_last))
         last_start = first_note.note_start
 
         # Update that note and discard finished tracks

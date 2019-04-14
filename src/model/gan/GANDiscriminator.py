@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from constants import LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, TYPE_D, MAX_POLYPHONY
+from constants import LAYERS_D, HIDDEN_DIM_D, BIDIRECTIONAL_D, TYPE_D, INPUT_FEATURES
 from model.gan.RNN import RNN
 from utils.tensors import device
 
@@ -17,7 +17,7 @@ class GANDiscriminator(nn.Module):
         super(GANDiscriminator, self).__init__()
 
         self.rnn = RNN(architecture=TYPE_D,
-                       inp_dim=MAX_POLYPHONY,
+                       inp_dim=INPUT_FEATURES,
                        hid_dim=HIDDEN_DIM_D,
                        layers=LAYERS_D,
                        bidirectional=BIDIRECTIONAL_D).to(device)

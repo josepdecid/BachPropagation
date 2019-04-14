@@ -63,7 +63,7 @@ class Trainer:
             metric.print_metrics()
 
             if epoch % SAMPLE_STEPS == 0:
-                sample = self.generate_sample(length=500)
+                sample = self.generate_sample(length=5000)
                 reconstruct_midi(title=f'Sample_{epoch}', raw_data=sample)
                 # TODO: Visdom doesn't accept MIDI files.
                 #  Should convert to WAV or find an alternative for visualization.
@@ -86,7 +86,7 @@ class Trainer:
             noise_data = GANGenerator.noise((1, length))
             sample_data = self.model.generator(noise_data)
             # sample_notes = sample_data.argmax(2)
-            return sample_data.view(-1, MAX_POLYPHONY).cpu().numpy()
+            return sample_data.view(-1, 3).cpu().numpy()
 
     def _pretrain_epoch(self, epoch: int) -> EpochMetric:
         """

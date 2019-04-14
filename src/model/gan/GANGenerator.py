@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, TYPE_G, MAX_POLYPHONY
+from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, TYPE_G, INPUT_FEATURES
 from model.gan.RNN import RNN
 from utils.tensors import device
 
@@ -25,8 +25,8 @@ class GANGenerator(nn.Module):
                        bidirectional=BIDIRECTIONAL_G).to(device)
 
         dense_input_features = (2 if BIDIRECTIONAL_G else 1) * HIDDEN_DIM_G
-        self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=2 * MAX_POLYPHONY)
-        self.dense_2 = nn.Linear(in_features=2 * MAX_POLYPHONY, out_features=MAX_POLYPHONY)
+        self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=2 * INPUT_FEATURES)
+        self.dense_2 = nn.Linear(in_features=2 * INPUT_FEATURES, out_features=INPUT_FEATURES)
 
     def forward(self, x):
         x, _ = self.rnn(x, )

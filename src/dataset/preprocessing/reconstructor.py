@@ -44,7 +44,10 @@ def parse_data(notes_data: NDArray) -> str:
     csv_data_tracks = [[f'{idx + 2}, 0, Start_track'] for idx in range(MAX_POLYPHONY)]
 
     for note_data in notes_data:
-        note = freq_to_note(float(note_data[0]) * MAX_FREQ_NOTE)
+        note = freq_to_note(float(note_data[0]) * (MAX_FREQ_NOTE if MAX_FREQ_NOTE else 1))
+        # if note == 0:
+        #    continue
+
         duration = int(note_data[1])
         time_since_previous = int(note_data[2])
 

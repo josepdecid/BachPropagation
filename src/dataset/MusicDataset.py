@@ -5,7 +5,7 @@ from typing import List
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from constants import DATASET_PATH, BATCH_SIZE, MAX_POLYPHONY
+from constants import DATASET_PATH, BATCH_SIZE, INPUT_FEATURES
 from utils.tensors import use_cuda
 from utils.typings import File, FloatTensor
 
@@ -46,7 +46,7 @@ class MusicDataset(Dataset):
         """
         padded_songs = []
         for song in self.songs:
-            padded_song = torch.zeros((self.longest_song, MAX_POLYPHONY), dtype=torch.float)
+            padded_song = torch.zeros((self.longest_song, INPUT_FEATURES), dtype=torch.float)
             padded_song[:len(song), :] = torch.tensor(song)
             padded_songs.append(padded_song)
         return padded_songs
