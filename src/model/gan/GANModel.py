@@ -25,6 +25,7 @@ class GANModel:
 
         self.training_criterion: Criterion = nn.BCELoss()
         self.pretraining_criterion: Criterion = nn.CrossEntropyLoss()
+        self.pretraining_discriminator_criterion: Criterion = nn.MSELoss()
 
     def train_mode(self):
         self.generator.train()
