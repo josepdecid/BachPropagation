@@ -6,7 +6,7 @@ from typing import List, Dict
 from py_midicsv import midi_to_csv
 from tqdm import tqdm
 
-from constants import RAW_DATASET_PATH, DATASET_PATH, SAMPLE_TIMES, MAX_POLYPHONY
+from constants import RAW_DATASET_PATH, DATASET_PATH, SAMPLE_TIMES, MAX_POLYPHONY, MAX_FREQ_NOTE
 from dataset.Music import Song, Track, NoteData
 from utils.music import note_to_freq
 
@@ -97,9 +97,10 @@ def csv_to_series(song: Song) -> List[List[int]]:
 def notes_to_freq(series: List[List[int]]) -> List[List[float]]:
     notes_freqs = []
     for notes in series:
-        freqs = []
-        for note in notes:
-            freqs.append(note_to_freq(note))
+        freqs = [0.0] * MAX_POLYPHONY
+        for idx, note in enumerate(notes):
+            # Normalize in [0, 1] dividing by frequency of the highest note
+            freqs[idx] = (note_to_freq(note) / MAX_FREQ_NOTE)
         notes_freqs.append(freqs)
     return notes_freqs
 

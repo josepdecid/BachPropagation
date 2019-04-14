@@ -24,7 +24,7 @@ class GANModel:
         self.d_scheduler: Scheduler = ReduceLROnPlateau(self.d_optimizer, mode='min', patience=LR_PAT_D)
 
         self.training_criterion: Criterion = nn.BCELoss()
-        self.pretraining_criterion: Criterion = nn.CrossEntropyLoss()
+        self.pretraining_criterion: Criterion = nn.MSELoss()
 
     def train_mode(self):
         self.generator.train()

@@ -4,8 +4,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, TYPE_G, MAX_POLYPHONY
 from model.gan.RNN import RNN
-from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, NUM_NOTES, TYPE_G
 from utils.tensors import device
 
 
@@ -19,14 +19,14 @@ class GANGenerator(nn.Module):
         super(GANGenerator, self).__init__()
 
         self.rnn = RNN(architecture=TYPE_G,
-                       inp_dim=NUM_NOTES,
+                       inp_dim=1,
                        hid_dim=HIDDEN_DIM_G,
                        layers=LAYERS_G,
                        bidirectional=BIDIRECTIONAL_G).to(device)
 
         dense_input_features = (2 if BIDIRECTIONAL_G else 1) * HIDDEN_DIM_G
-        self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=2 * NUM_NOTES)
-        self.dense_2 = nn.Linear(in_features=2 * NUM_NOTES, out_features=NUM_NOTES)
+        self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=2 * MAX_POLYPHONY)
+        self.dense_2 = nn.Linear(in_features=2 * MAX_POLYPHONY, out_features=MAX_POLYPHONY)
 
     def forward(self, x):
         x, _ = self.rnn(x, )
@@ -38,7 +38,7 @@ class GANGenerator(nn.Module):
         x = F.dropout(x)
 
         x = self.dense_2(x)
-        x = F.softmax(x, dim=1)
+        x = F.relu(x)
 
         return x
 
@@ -48,4 +48,4 @@ class GANGenerator(nn.Module):
         Generates a 2-d vector of uniform sampled random values.
         :param dims: Tuple with the dimensions of the data.
         """
-        return torch.randn(dims, dtype=torch.float).to(device)
+        return torch.randn(dims + (1,), dtype=torch.float).to(device)

@@ -5,8 +5,8 @@ from typing import List
 import torch
 from tqdm import tqdm
 
-from constants import EPOCHS, NUM_NOTES, CKPT_STEPS, CHECKPOINTS_PATH, \
-    SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D
+from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, \
+    SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D, MAX_POLYPHONY
 from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.gan.GANGenerator import GANGenerator
@@ -64,7 +64,7 @@ class Trainer:
 
             if epoch % SAMPLE_STEPS == 0:
                 sample = self.generate_sample(length=500)
-                reconstruct_midi(title=f'Sample_{epoch}', data=sample)
+                reconstruct_midi(title=f'Sample_{epoch}', raw_data=sample)
                 # TODO: Visdom doesn't accept MIDI files.
                 #  Should convert to WAV or find an alternative for visualization.
                 # if FLAGS['viz']:
@@ -83,10 +83,10 @@ class Trainer:
         """
         self.model.eval_mode()
         with torch.no_grad():
-            noise_data = GANGenerator.noise((1, length, NUM_NOTES))
+            noise_data = GANGenerator.noise((1, length))
             sample_data = self.model.generator(noise_data)
-            sample_notes = sample_data.argmax(2)
-            return sample_notes.view(-1).cpu().numpy()
+            # sample_notes = sample_data.argmax(2)
+            return sample_data.view(-1, MAX_POLYPHONY).cpu().numpy()
 
     def _pretrain_epoch(self, epoch: int) -> EpochMetric:
         """
@@ -155,7 +155,7 @@ class Trainer:
         batch_size = real_data.size(0)
         time_steps = real_data.size(1)
 
-        noise_data = GANGenerator.noise((batch_size, time_steps, NUM_NOTES))
+        noise_data = GANGenerator.noise((batch_size, time_steps))
         fake_data = self.model.generator(noise_data)
 
         # Reset gradients
@@ -164,8 +164,7 @@ class Trainer:
         # Forwards pass to get logits
         # Calculate gradients w.r.t parameters and backpropagate
         if pretraining:
-            loss = self.model.pretraining_criterion(fake_data.view(batch_size, NUM_NOTES, -1),
-                                                    real_data.argmax(dim=2).long())
+            loss = self.model.pretraining_criterion(fake_data, real_data)
         else:
             prediction = self.model.discriminator(fake_data)
             loss = self.model.training_criterion(prediction, ones_target((batch_size,)))
@@ -197,7 +196,7 @@ class Trainer:
         real_loss.backward()
 
         # Train on fake data
-        noise_data = GANGenerator.noise((batch_size, time_steps, NUM_NOTES))
+        noise_data = GANGenerator.noise((batch_size, time_steps))
         fake_data = self.model.generator(noise_data).detach()
         fake_predictions = self.model.discriminator(fake_data)
         fake_loss = self.model.training_criterion(fake_predictions, zeros_target((batch_size,)))

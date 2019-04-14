@@ -4,7 +4,7 @@ import os
 import numpy as np
 from py_midicsv import csv_to_midi, FileWriter
 
-from constants import RESULTS_PATH, SAMPLE_TIMES, DATASET_PATH, MAX_POLYPHONY
+from constants import RESULTS_PATH, SAMPLE_TIMES, DATASET_PATH, MAX_POLYPHONY, MAX_FREQ_NOTE
 from utils.music import freq_to_note
 from utils.typings import NDArray
 
@@ -44,10 +44,8 @@ def parse_data(notes_data: NDArray) -> str:
     current_notes = [0] * MAX_POLYPHONY
     csv_data_tracks = [[f'{idx + 2}, 0, Start_track'] for idx in range(MAX_POLYPHONY)]
 
-    # TODO: Generalize for polyphony
-    start_times = [0] * MAX_POLYPHONY
     for time_step, freqs in enumerate(notes_data):
-        notes = list(map(freq_to_note, freqs))
+        notes = list(map(lambda x: freq_to_note(x * MAX_FREQ_NOTE), freqs))
         for idx, note in enumerate(notes):
             if note != current_notes[idx]:
                 if current_notes[idx] > 0:
@@ -80,7 +78,7 @@ def series_to_csv(title: str, data: NDArray) -> str:
     """
     logging.info('Converting to CSV...')
 
-    header = [f'0, 0, Header, 1, {MAX_POLYPHONY}, 384',
+    header = [f'0, 0, Header, 1, {MAX_POLYPHONY + 2}, 384',
               '1, 0, Start_track',
               f'1, 0, Title_t, "{title}"',
               '1, 0, Time_signature, 4, 2, 24, 8',
@@ -96,14 +94,14 @@ def series_to_csv(title: str, data: NDArray) -> str:
     return f'{header}\n{parse_data(data)}\n{footer}'
 
 
-def reconstruct_midi(title: str, data: NDArray) -> str:
+def reconstruct_midi(title: str, raw_data: NDArray) -> str:
     """
     Parses the output of the GAN generator to a MIDI file.
     :param title: Title of the generated song.
-    :param data: Data output by the generator.
+    :param raw_data: Data output by the generator.
     """
     logging.info(f'Creating {title}')
 
     # TODO: Generalize for polyphony
-    csv_data = series_to_csv(title=title, data=data)
+    csv_data = series_to_csv(title=title, data=raw_data)
     return store_csv_to_midi(title=title, data=csv_data)
