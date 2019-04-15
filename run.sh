@@ -3,6 +3,7 @@
 # Default parameters
 BP_PATH="$HOME/BP"
 VIS_PORT=8097
+NGROK=false
 
 while [[ $# -gt 0 ]]; do
     key="$1"
@@ -12,6 +13,9 @@ while [[ $# -gt 0 ]]; do
             shift ; shift ;;
         -v|--viz-port)
             VIS_PORT="$2"
+            shift ; shift ;;
+        -n|--ngrok)
+            NGROK=true
             shift ; shift ;;
         *)
             shift ;;
@@ -44,15 +48,16 @@ else
 fi
 
 # NGROK TUNNELING
+if [[ "$NGROK" == true ]] ; then
+    ngrok http "$VIS_PORT" > /dev/null &
+    echo "> Tunneling URL with Ngrok"
+    sleep 3
 
-ngrok http "$VIS_PORT" > /dev/null &
-echo "> Tunneling URL with Ngrok"
-sleep 3
+    WEB_HOOK_URL=$(curl --silent --connect-timeout 10 http://localhost:4040/api/tunnels | \
+           pipenv run python -c "import json,sys;obj=json.load(sys.stdin);print(obj['tunnels'][0]['public_url'])")
 
-WEB_HOOK_URL=$(curl --silent --connect-timeout 10 http://localhost:4040/api/tunnels | \
-       pipenv run python -c "import json,sys;obj=json.load(sys.stdin);print(obj['tunnels'][0]['public_url'])")
-
-echo "Visdom tunneled in $WEB_HOOK_URL"
+    echo "Visdom tunneled in $WEB_HOOK_URL"
+fi
 
 # RUN MODEL
 
