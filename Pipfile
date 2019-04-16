@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 visdom = "*"
+matplotlib = "*"
 
 [packages]
 py-midicsv = "*"
@@ -13,6 +14,7 @@ tqdm = "*"
 torch = "*"
 torchvision = "*"
 flask = "*"
+visdom = "*"
 
 [requires]
 python_version = "3.7"

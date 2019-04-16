@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
 import torch
 from tqdm import tqdm
@@ -55,6 +55,7 @@ class Trainer:
 
             if FLAGS['viz']:
                 metric.plot_loss(self.vis)
+                metric.plot_confusion_matrix(self.vis)
                 self.vis.plot_line('LR_G', None, 'LR Generator', 'LR',
                                    [epoch], [self.model.g_optimizer.param_groups[0]['lr']], PLOT_COL['G'])
                 self.vis.plot_line('LR_D', None, 'LR Discriminator', 'LR',
@@ -107,14 +108,14 @@ class Trainer:
                 g_loss = self._train_generator(real_data=features, pretraining=True)
                 sum_loss_g += g_loss * batch_size
 
-            if epoch < PRETRAIN_D:
-                d_loss = self._train_discriminator(real_data=features, pretraining=True)
-                sum_loss_d += d_loss * batch_size
+            # if epoch < PRETRAIN_D:
+            #    d_loss = self._train_discriminator(real_data=features)
+            #    sum_loss_d += d_loss * batch_size
 
         g_loss = sum_loss_g / len(self.loader.dataset)
         d_loss = sum_loss_d / len(self.loader.dataset)
 
-        return EpochMetric(epoch, g_loss, d_loss)
+        return EpochMetric(epoch, g_loss, d_loss, None)
 
     def _train_epoch(self, epoch: int) -> EpochMetric:
         """
@@ -124,8 +125,8 @@ class Trainer:
         """
         self.model.train_mode()
 
-        sum_loss_g = 0
-        sum_loss_d = 0
+        sum_loss_g, sum_loss_d = 0, 0
+        sum_t_pos, sum_t_neg = 0, 0
 
         batch_data = enumerate(tqdm(self.loader, desc=f'Epoch {epoch}: ', ncols=100))
         for batch_idx, features in batch_data:
@@ -133,22 +134,27 @@ class Trainer:
             batch_size = features.size(0)
 
             # if current_loss_d >= 0.7 * current_loss_g:
-            d_loss = self._train_discriminator(features)
+            d_loss, t_pos, t_neg = self._train_discriminator(real_data=features)
             # current_loss_d = d_loss
             sum_loss_d += d_loss * batch_size
+            sum_t_pos += t_pos
+            sum_t_neg += t_neg
 
             # if current_loss_g >= 0.7 * current_loss_d:
             g_loss = self._train_generator(real_data=features)
             # current_loss_g = g_loss
             sum_loss_g += g_loss * batch_size
 
-        g_loss = sum_loss_g / len(self.loader.dataset)
-        d_loss = sum_loss_d / len(self.loader.dataset)
+        len_data = len(self.loader.dataset)
+        sum_loss_g /= len_data
+        sum_loss_d /= len_data
+        self.model.g_scheduler.step(metrics=sum_loss_g)
+        self.model.d_scheduler.step(metrics=sum_loss_d)
 
-        self.model.g_scheduler.step(metrics=g_loss)
-        self.model.d_scheduler.step(metrics=d_loss)
+        confusion_matrix = [[sum_t_pos, len_data - sum_t_pos],
+                            [len_data - sum_t_neg, sum_t_neg]]
 
-        return EpochMetric(epoch, g_loss, d_loss)
+        return EpochMetric(epoch, sum_loss_g, sum_loss_d, confusion_matrix)
 
     def _train_generator(self, real_data, pretraining=False) -> float:
         """
@@ -183,7 +189,7 @@ class Trainer:
 
         return loss.item()
 
-    def _train_discriminator(self, real_data: FloatTensor, pretraining=False) -> float:
+    def _train_discriminator(self, real_data: FloatTensor) -> Tuple[float, int, int]:
         """
         Train GAN Discriminator performing an optimizer step.
         :param real_data: Real inputs from the dataset
@@ -197,26 +203,27 @@ class Trainer:
         # Reset gradients
         self.model.d_optimizer.zero_grad()
 
+        zeros = zeros_target((batch_size,))
+        ones = ones_target((batch_size,))
+
         # Predictions on real data
         real_predictions = self.model.discriminator(real_data)
 
-        if pretraining:
-            real_loss = self.model.pretraining_criterion(real_predictions, torch.ones(real_predictions.shape))
-            real_loss.backward()
-            fake_loss = 0
-        else:
-            # Train on real data
-            real_loss = self.model.training_criterion(real_predictions, ones_target((batch_size,)))
-            real_loss.backward()
+        # Train on real data
+        real_loss = self.model.training_criterion(real_predictions, ones)
+        real_loss.backward()
 
-            # Train on fake data
-            noise_data = GANGenerator.noise((batch_size, time_steps))
-            fake_data = self.model.generator(noise_data).detach()
-            fake_predictions = self.model.discriminator(fake_data)
-            fake_loss = self.model.training_criterion(fake_predictions, zeros_target((batch_size,)))
-            fake_loss.backward()
+        # Train on fake data
+        noise_data = GANGenerator.noise((batch_size, time_steps))
+        fake_data = self.model.generator(noise_data).detach()
+        fake_predictions = self.model.discriminator(fake_data)
+        fake_loss = self.model.training_criterion(fake_predictions, zeros)
+        fake_loss.backward()
 
         # Update parameters
         self.model.d_optimizer.step()
 
-        return (real_loss + fake_loss).item()
+        true_positives = real_predictions.eq(ones).sum().item()
+        true_negatives = fake_predictions.eq(zeros).sum().item()
+
+        return (real_loss + fake_loss).item(), true_positives, true_negatives
