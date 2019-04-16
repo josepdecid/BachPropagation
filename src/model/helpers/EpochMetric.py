@@ -18,8 +18,8 @@ class EpochMetric:
         return self.cf[0][0] / (self.cf[0][0] + self.cf[0][1])
 
     @property
-    def tn_ratio(self):
-        return self.cf[1][1] / (self.cf[1][0] + self.cf[1][1])
+    def fn_ratio(self):
+        return self.cf[1][0] / (self.cf[1][0] + self.cf[1][1])
 
     def print_metrics(self):
         if self.d_loss is None:
@@ -46,9 +46,9 @@ class EpochMetric:
 
         # True Negative Ratios
         vis.plot_line(plot_name='ConfusionMatrix',
-                      line_label='True Negatives',
+                      line_label='False Negatives',
                       x=[self.epoch],
-                      y=[self.tn_ratio])
+                      y=[self.fn_ratio])
 
         # Confusion Matrix
         cf = np.array(self.cf)

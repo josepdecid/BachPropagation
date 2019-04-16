@@ -5,7 +5,8 @@ from typing import List, Tuple
 import torch
 from tqdm import tqdm
 
-from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D
+from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D, \
+    T_LOSS_BALANCER
 from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.gan.GANGenerator import GANGenerator
@@ -49,9 +50,12 @@ class Trainer:
                 metric.plot_loss(self.vis, plot='Pretraining', title='Pretraining Loss')
             metric.print_metrics()
 
+        current_loss_d = 1e99
+        current_loss_g = 1e99
+
         # TRAINING
         for epoch in range(1, EPOCHS + 1):
-            metric = self._train_epoch(epoch)
+            metric = self._train_epoch(epoch, current_loss_d, current_loss_g)
 
             if FLAGS['viz']:
                 metric.plot_loss(self.vis)
@@ -117,7 +121,7 @@ class Trainer:
 
         return EpochMetric(epoch, g_loss, d_loss, None)
 
-    def _train_epoch(self, epoch: int) -> EpochMetric:
+    def _train_epoch(self, epoch: int, current_loss_d=0.0, current_loss_g=0.0) -> EpochMetric:
         """
         Train the model for one epoch with the classical GAN training approach.
         :param epoch: Current epoch index.
@@ -133,17 +137,21 @@ class Trainer:
             features = features.to(device)
             batch_size = features.size(0)
 
-            # if current_loss_d >= 0.7 * current_loss_g:
-            d_loss, t_pos, t_neg = self._train_discriminator(real_data=features)
-            # current_loss_d = d_loss
-            sum_loss_d += d_loss * batch_size
-            sum_t_pos += t_pos
-            sum_t_neg += t_neg
+            if current_loss_d >= T_LOSS_BALANCER * current_loss_g:
+                d_loss, t_pos, t_neg = self._train_discriminator(real_data=features)
+                current_loss_d = d_loss
+                sum_loss_d += d_loss * batch_size
+                sum_t_pos += t_pos
+                sum_t_neg += t_neg
+            else:
+                logging.debug('Freezing Discriminator')
 
-            # if current_loss_g >= 0.7 * current_loss_d:
-            g_loss = self._train_generator(real_data=features)
-            # current_loss_g = g_loss
-            sum_loss_g += g_loss * batch_size
+            if current_loss_g >= T_LOSS_BALANCER * current_loss_d:
+                g_loss = self._train_generator(real_data=features)
+                current_loss_g = g_loss
+                sum_loss_g += g_loss * batch_size
+            else:
+                logging.debug('Freezing Generator')
 
         len_data = len(self.loader.dataset)
         sum_loss_g /= len_data
