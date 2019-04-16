@@ -200,11 +200,11 @@ class Trainer:
         batch_size = real_data.size(0)
         time_steps = real_data.size(1)
 
-        # Reset gradients
-        self.model.d_optimizer.zero_grad()
-
         zeros = zeros_target((batch_size,))
         ones = ones_target((batch_size,))
+
+        # Reset gradients
+        self.model.d_optimizer.zero_grad()
 
         # Predictions on real data
         real_predictions = self.model.discriminator(real_data)
@@ -223,7 +223,7 @@ class Trainer:
         # Update parameters
         self.model.d_optimizer.step()
 
-        true_positives = real_predictions.eq(ones).sum().item()
-        true_negatives = fake_predictions.eq(zeros).sum().item()
+        true_positives = (real_predictions > 0.5).to(torch.float).eq(ones).sum().item()
+        true_negatives = (fake_predictions > 0.5).to(torch.float).eq(zeros).sum().item()
 
         return (real_loss + fake_loss).item(), true_positives, true_negatives

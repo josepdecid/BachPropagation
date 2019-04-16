@@ -25,8 +25,7 @@ class GANGenerator(nn.Module):
                        bidirectional=BIDIRECTIONAL_G).to(device)
 
         dense_input_features = (2 if BIDIRECTIONAL_G else 1) * HIDDEN_DIM_G
-        self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=2 * INPUT_FEATURES)
-        self.dense_2 = nn.Linear(in_features=2 * INPUT_FEATURES, out_features=INPUT_FEATURES)
+        self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=INPUT_FEATURES)
 
     def forward(self, x):
         x, _ = self.rnn(x, )
@@ -34,10 +33,6 @@ class GANGenerator(nn.Module):
         x = F.dropout(x)
 
         x = self.dense_1(x)
-        x = F.leaky_relu(x)
-        x = F.dropout(x)
-
-        x = self.dense_2(x)
         x = F.relu(x)
 
         return x
