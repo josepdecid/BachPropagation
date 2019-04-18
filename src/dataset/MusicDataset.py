@@ -1,11 +1,11 @@
 import glob
 import logging
-from typing import List
+from typing import List, Tuple
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from constants import DATASET_PATH, BATCH_SIZE, INPUT_FEATURES
+from constants import DATASET_PATH, BATCH_SIZE, INPUT_FEATURES, SEQUENCE_SIZE
 from utils.tensors import use_cuda
 from utils.typings import File, FloatTensor
 
@@ -23,9 +23,11 @@ class MusicDataset(Dataset):
                 self.songs.append(self._read_song(f))
 
         self.padded_songs = self._apply_padding()
+        self.seq_X, self.seq_Y = self._create_sequences()
 
     def __getitem__(self, index: int) -> FloatTensor:
-        return self.padded_songs[index]
+        # return self.padded_songs[index]
+        return self.seq_X[index], self.seq_Y[index]
 
     def __len__(self) -> int:
         return len(self.songs)
@@ -50,6 +52,16 @@ class MusicDataset(Dataset):
             padded_song[:len(song), :] = torch.tensor(song)
             padded_songs.append(padded_song)
         return padded_songs
+
+    def _create_sequences(self) -> Tuple[List[List[Tuple[float, float, float, float]]],
+                                         List[Tuple[float, float, float, float]]]:
+        inputs = []
+        outputs = []
+        for song in self.songs:
+            for i in range(0, len(song) - SEQUENCE_SIZE):
+                inputs.append(torch.tensor(song[i:i + SEQUENCE_SIZE]))
+                outputs.append(torch.tensor(song[i + SEQUENCE_SIZE]))
+        return inputs, outputs
 
     def _update_longest_song(self, length: int) -> None:
         """

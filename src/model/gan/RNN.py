@@ -14,10 +14,14 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
 
         assert architecture in ('LSTM', 'GRU')
+
         gated_rnn = nn.LSTM if architecture == 'LSTM' else nn.GRU
+        dropout = 0.5 if layers > 1 else 0
+
         self.rnn = gated_rnn(input_size=inp_dim,
                              hidden_size=hid_dim,
                              num_layers=layers,
+                             dropout=dropout,
                              batch_first=True,
                              bidirectional=bidirectional)
 

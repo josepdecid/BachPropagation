@@ -3,7 +3,8 @@ import os
 
 from py_midicsv import csv_to_midi, FileWriter
 
-from constants import RESULTS_PATH, MAX_POLYPHONY, MAX_FREQ_NOTE
+from constants import RESULTS_PATH, DATASET_PATH, NORMALIZE_FREQ, NORMALIZE_VEL
+from constants import MAX_POLYPHONY, MAX_FREQ_NOTE, MAX_VELOCITY
 from utils.music import freq_to_note
 from utils.typings import NDArray
 
@@ -26,7 +27,7 @@ def store_csv_to_midi(title: str, csv_data: str) -> str:
             writer = FileWriter(g)
             writer.write(midi_data)
 
-    os.remove(file_path)
+    # os.remove(file_path)
 
     return f'{RESULTS_PATH}/{title}.mid'
 
@@ -44,40 +45,33 @@ def parse_data(notes_data: NDArray) -> str:
     csv_data_tracks = [[f'{idx + 2}, 0, Start_track'] for idx in range(MAX_POLYPHONY)]
 
     for note_data in notes_data:
-        note = freq_to_note(float(note_data[0]) * (MAX_FREQ_NOTE if MAX_FREQ_NOTE else 1))
-        # if note == 0:
-        #    continue
+        note = freq_to_note(float(note_data[0]) * (MAX_FREQ_NOTE if NORMALIZE_FREQ else 1))
+        velocity = int(note_data[1] * (MAX_VELOCITY if NORMALIZE_VEL else 1))
+        duration = int(note_data[2])
+        time_since_previous = int(note_data[3])
 
-        duration = int(note_data[1])
-        time_since_previous = int(note_data[2])
+        last_time += time_since_previous
+        end_time = last_time + duration
 
-        start_time = last_time + time_since_previous
-        end_time = start_time + duration
-        last_time = start_time
-
-        track_idx = None
+        track_idx = -1
         for idx in range(len(last_time_track_played)):
-            if start_time >= last_time_track_played[idx]:
-                track_idx = idx
+            if last_time >= last_time_track_played[idx]:
                 last_time_track_played[idx] = end_time
+                track_idx = idx
                 break
 
-        if track_idx is None:
-            continue
-
-        channel = track_idx if track_idx < 10 else track_idx + 1
-
-        csv_data_tracks[track_idx].append(
-            f'{track_idx + 2}, {start_time}, Note_on_c, {channel}, {note}, 64\n' +
-            f'{track_idx + 2}, {end_time}, Note_off_c, {channel}, {note}, 0'
-        )
+        if track_idx > 0:
+            channel = track_idx if track_idx < 9 else track_idx + 1
+            csv_data_tracks[track_idx].append(
+                f'{track_idx + 2}, {last_time}, Note_on_c, {channel}, {note}, {velocity}\n' +
+                f'{track_idx + 2}, {end_time}, Note_off_c, {channel}, {note}, 0'
+            )
 
     data_tracks = []
     for idx in range(len(csv_data_tracks)):
-        if len(csv_data_tracks[idx]) == 1:
-            continue
-        csv_data_tracks[idx].append(f'{idx + 2}, {last_time_track_played[idx]}, End_track')
-        data_tracks.append('\n'.join(csv_data_tracks[idx]))
+        if len(csv_data_tracks[idx]) > 1:
+            csv_data_tracks[idx].append(f'{idx + 2}, {last_time_track_played[idx]}, End_track')
+            data_tracks.append('\n'.join(csv_data_tracks[idx]))
 
     return '\n'.join(data_tracks)
 
@@ -95,7 +89,7 @@ def series_to_csv(title: str, data: NDArray) -> str:
               '1, 0, Start_track',
               f'1, 0, Title_t, "{title}"',
               '1, 0, Time_signature, 4, 2, 24, 8',
-              '1, 0, Tempo, 550000',
+              '1, 0, Tempo, 363636',
               '1, 0, End_track',
               '2, 0, Start_track',
               '2, 0, Text_t, "RH"']
@@ -117,3 +111,10 @@ def reconstruct_midi(title: str, raw_data: NDArray) -> str:
 
     csv_data = series_to_csv(title=title, data=raw_data)
     return store_csv_to_midi(title=title, csv_data=csv_data)
+
+
+with open(f'{DATASET_PATH}/ff1gameover.txt') as f:
+    data = f.read()
+    data = data.strip().split('\n')
+    data = list(map(lambda x: (float(x.split()[0]), float(x.split()[1]), int(x.split()[2]), int(x.split()[3])), data))
+    reconstruct_midi('EXAMPLEEEEE', data)

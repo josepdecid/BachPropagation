@@ -22,8 +22,8 @@ class EpochMetric:
         return self.cf[1][0] / (self.cf[1][0] + self.cf[1][1])
 
     def print_metrics(self):
-        if self.d_loss is None:
-            print(f'(Pretrain) Generator loss: {self.g_loss:.6f}')
+        if self.d_loss is None or self.cf is None:
+            print(f'(Pretrain {self.epoch:>3}) Generator loss: {self.g_loss:.6f}')
         else:
             print(f'Generator loss: {self.g_loss:.6f} | Discriminator loss: {self.d_loss:.6f}')
             print(f'Confusion matrix:'

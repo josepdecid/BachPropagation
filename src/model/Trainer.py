@@ -6,15 +6,16 @@ import torch
 from tqdm import tqdm
 
 from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D, \
-    T_LOSS_BALANCER
+    T_LOSS_BALANCER, INPUT_FEATURES
 from dataset.MusicDataset import MusicDataset
 from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.gan.GANGenerator import GANGenerator
 from model.gan.GANModel import GANModel
 from model.helpers.EpochMetric import EpochMetric
 from model.helpers.VisdomPlotter import VisdomPlotter
+from model.sampler import generate_sample
 from utils.tensors import device, zeros_target, ones_target
-from utils.typings import FloatTensor, NDArray
+from utils.typings import FloatTensor
 
 
 class Trainer:
@@ -50,6 +51,9 @@ class Trainer:
                 metric.plot_loss(self.vis, plot='Pretraining', title='Pretraining Loss')
             metric.print_metrics()
 
+        sample = generate_sample(model=self.model, length=500)
+        reconstruct_midi(title=f'Sample_test', raw_data=sample)
+
         current_loss_d = 1e99
         current_loss_g = 1e99
 
@@ -79,18 +83,6 @@ class Trainer:
                 torch.save(self.model.generator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_G{epoch}.pt')
                 torch.save(self.model.discriminator.state_dict(), f'{CHECKPOINTS_PATH}/{ts}_D{epoch}.pt')
 
-    def generate_sample(self, length: int) -> NDArray:
-        """
-        Generate synthetic song from the Generator.
-        :param length: Length of the song.
-        :return: NDArray with song data
-        """
-        self.model.eval_mode()
-        with torch.no_grad():
-            noise_data = GANGenerator.noise((1, length))
-            sample_data = self.model.generator(noise_data)
-            return sample_data.view(-1, 3).cpu().numpy()
-
     def _pretrain_epoch(self, epoch: int) -> EpochMetric:
         """
         Pretrain the model for one epoch trying to obtain the real data from the Generator.
@@ -102,13 +94,14 @@ class Trainer:
         sum_loss_g = 0
         sum_loss_d = 0
 
-        batch_data = enumerate(tqdm(self.loader, desc=f'Epoch {epoch}: ', ncols=100))
-        for batch_idx, features in batch_data:
+        batch_data = enumerate(self.loader)
+        for batch_idx, (features, labels) in batch_data:
             features = features.to(device)
+            labels = labels.to(device)
             batch_size = features.size(0)
 
             if epoch < PRETRAIN_G:
-                g_loss = self._train_generator(real_data=features, pretraining=True)
+                g_loss = self._train_generator(real_data=features, pretraining_labels=labels)
                 sum_loss_g += g_loss * batch_size
 
             # if epoch < PRETRAIN_D:
@@ -117,6 +110,8 @@ class Trainer:
 
         g_loss = sum_loss_g / len(self.loader.dataset)
         d_loss = sum_loss_d / len(self.loader.dataset)
+
+        self.model.g_scheduler.step(metrics=g_loss)
 
         return EpochMetric(epoch, g_loss, d_loss, None)
 
@@ -163,20 +158,22 @@ class Trainer:
 
         return EpochMetric(epoch, sum_loss_g, sum_loss_d, confusion_matrix)
 
-    def _train_generator(self, real_data, pretraining=False) -> float:
+    def _train_generator(self, real_data, pretraining_labels=None) -> float:
         """
         Train GAN Generator performing an optimizer step.
         :param real_data: Real inputs from the dataset
-        :param pretraining: Boolean indicating whether it's pretraining or training.
+        :param pretraining_labels: Boolean indicating whether it's pretraining or training.
         :return: Discriminator loss from the specified criterion.
         """
-        logging.debug('Pretraining Generator') if pretraining else logging.debug('Training Generator')
+        pretraining = pretraining_labels is not None
+        if pretraining:
+            logging.debug('Training Generator')
+        else:
+            logging.debug('Pretraining Generator')
 
         batch_size = real_data.size(0)
         time_steps = real_data.size(1)
-
-        noise_data = GANGenerator.noise((batch_size, time_steps))
-        fake_data = self.model.generator(noise_data)
+        noise_data = GANGenerator.noise((batch_size, time_steps, INPUT_FEATURES))
 
         # Reset gradients
         self.model.g_optimizer.zero_grad()
@@ -184,10 +181,11 @@ class Trainer:
         # Forwards pass to get logits
         # Calculate gradients w.r.t parameters and backpropagate
         if pretraining:
-            loss = self.model.pretraining_criterion(fake_data, real_data)
+            next_note_prediction = self.model.generator(real_data, pretraining=True)
+            loss = self.model.pretraining_criterion(next_note_prediction, pretraining_labels)
         else:
-            prediction = self.model.discriminator(fake_data)
-            loss = self.model.training_criterion(prediction, ones_target((batch_size,)))
+            fake_data = self.model.generator(noise_data)
+            loss = self.model.training_criterion(fake_data, ones_target((batch_size,)))
 
         loss.backward()
 
