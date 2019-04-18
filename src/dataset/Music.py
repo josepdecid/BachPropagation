@@ -1,6 +1,6 @@
 from typing import List
 
-from constants import MAX_FREQ_NOTE
+from constants import MAX_FREQ_NOTE, MAX_VELOCITY
 from utils.music import note_to_freq
 
 
@@ -16,7 +16,7 @@ class NoteData(object):
 
     @property
     def norm_vel(self) -> float:
-        return self.velocity / 127.0
+        return self.velocity / MAX_VELOCITY
 
     @property
     def freq(self) -> float:
@@ -38,12 +38,20 @@ class NoteData(object):
 class Track:
     def __init__(self, data: List[NoteData]):
         self.notes_data = data
+        self.c_idx = 0
 
     def get_max_time(self):
         return self.notes_data[-1].note_end
 
     def get_note_data(self, idx: int) -> NoteData:
         return self.notes_data[idx]
+
+    @property
+    def c_note(self):
+        if self.c_idx > self.len_track:
+            return self.notes_data[self.c_idx]
+        else:
+            return None
 
     @property
     def len_track(self):
@@ -61,3 +69,8 @@ class Song:
 
     def get_track(self, idx: int) -> Track:
         return self.tracks[idx]
+
+    def get_notes_in_start_order(self):
+        single_track = [note for track in self.tracks for note in track.notes_data]
+        single_track.sort(key=lambda n: n.note_start)
+        return single_track

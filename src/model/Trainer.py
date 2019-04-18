@@ -89,7 +89,6 @@ class Trainer:
         with torch.no_grad():
             noise_data = GANGenerator.noise((1, length))
             sample_data = self.model.generator(noise_data)
-            # sample_notes = sample_data.argmax(2)
             return sample_data.view(-1, 3).cpu().numpy()
 
     def _pretrain_epoch(self, epoch: int) -> EpochMetric:
