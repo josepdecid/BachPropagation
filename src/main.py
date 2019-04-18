@@ -16,8 +16,8 @@ def set_flags(flags):
 
 
 def run_model():
-    model = GANModel()
     dataset = MusicDataset()
+    model = GANModel(num_classes=dataset.vocab_size)
 
     trainer = Trainer(model=model, dataset=dataset)
     trainer.train()

@@ -12,10 +12,10 @@ from utils.typings import NNet, Optimizer, Criterion, Scheduler
 
 
 class GANModel:
-    def __init__(self):
+    def __init__(self, num_classes):
         logging.info('Creating GAN model...')
 
-        self.generator: NNet = GANGenerator().to(device)
+        self.generator: NNet = GANGenerator(num_classes).to(device)
         self.g_optimizer: Optimizer = torch.optim.Adam(self.generator.parameters(), lr=LR_G, weight_decay=L2_G)
         self.g_scheduler: Scheduler = ReduceLROnPlateau(self.g_optimizer, mode='min', patience=LR_PAT_G)
 
@@ -24,7 +24,7 @@ class GANModel:
         self.d_scheduler: Scheduler = ReduceLROnPlateau(self.d_optimizer, mode='min', patience=LR_PAT_D)
 
         self.training_criterion: Criterion = nn.BCELoss()
-        self.pretraining_criterion: Criterion = nn.MSELoss()
+        self.pretraining_criterion: Criterion = nn.CrossEntropyLoss()
 
     def train_mode(self):
         self.generator.train()

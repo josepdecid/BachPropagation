@@ -15,6 +15,7 @@ torch = "*"
 torchvision = "*"
 flask = "*"
 visdom = "*"
+music21 = "*"
 
 [requires]
 python_version = "3.7"

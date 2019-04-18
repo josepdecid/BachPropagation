@@ -1,13 +1,14 @@
 import glob
 import logging
-from typing import List, Tuple
 
+import music21 as m21
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from constants import DATASET_PATH, BATCH_SIZE, INPUT_FEATURES, SEQUENCE_SIZE
+from constants import RAW_DATASET_PATH, BATCH_SIZE, SEQUENCE_LEN
 from utils.tensors import use_cuda
-from utils.typings import File, FloatTensor
+from utils.typings import FloatTensor
 
 
 class MusicDataset(Dataset):
@@ -16,21 +17,47 @@ class MusicDataset(Dataset):
     def __init__(self):
         logging.info('Loading music data...')
 
-        self.songs = []
-        self.longest_song = 0
-        for path in glob.glob(f'{DATASET_PATH}/*.txt'):
-            with open(path, mode='r') as f:
-                self.songs.append(self._read_song(f))
+        self.notes = []
+        for path in glob.glob(f'{RAW_DATASET_PATH}/*.mid'):
+            midi_data = m21.converter.parse(path)
 
-        self.padded_songs = self._apply_padding()
-        self.seq_X, self.seq_Y = self._create_sequences()
+            try:
+                s2 = m21.instrument.partitionByInstrument(midi_data)
+                notes_to_parse = s2.parts[0].recurse()
+            except:
+                notes_to_parse = midi_data.flat.notes
+
+            for element in notes_to_parse:
+                if isinstance(element, m21.note.Note):
+                    self.notes.append(str(element.pitch))
+                elif isinstance(element, m21.chord.Chord):
+                    self.notes.append('.'.join(str(n) for n in element.normalOrder))
+
+        pitch_names = sorted(set(item for item in self.notes))
+        note2idx = {note: idx for idx, note in enumerate(pitch_names)}
+
+        self.network_input = []
+        self.network_output = []
+
+        for i in range(0, len(self.notes) - SEQUENCE_LEN, 1):
+            sequence_in = self.notes[i:i + SEQUENCE_LEN]
+            sequence_out = self.notes[i + SEQUENCE_LEN]
+            self.network_input.append([note2idx[char] for char in sequence_in])
+            self.network_output.append(note2idx[sequence_out])
+
+        self.vocab_size = len(set(self.notes))
+        self.network_input = torch.tensor(self.network_input, dtype=torch.float) / float(self.vocab_size)
+        self.network_input = np.reshape(self.network_input, newshape=(-1, SEQUENCE_LEN, 1))
+
+        # self.padded_songs = self._apply_padding()
+        # self.seq_X, self.seq_Y = self._create_sequences()
 
     def __getitem__(self, index: int) -> FloatTensor:
         # return self.padded_songs[index]
-        return self.seq_X[index], self.seq_Y[index]
+        return self.network_input[index], self.network_output[index]
 
     def __len__(self) -> int:
-        return len(self.songs)
+        return len(self.network_input)
 
     def get_dataloader(self, shuffle=False) -> DataLoader:
         """
@@ -40,51 +67,3 @@ class MusicDataset(Dataset):
         """
         kwargs = {'num_workers': 4, 'pin_memory': True} if use_cuda else {}
         return DataLoader(self, batch_size=BATCH_SIZE, shuffle=shuffle, **kwargs)
-
-    def _apply_padding(self) -> List[FloatTensor]:
-        """
-        Applies padding to songs to be all of the size of the longest one.
-        :return: Padded songs with Null-One hot encoding representations for padded data.
-        """
-        padded_songs = []
-        for song in self.songs:
-            padded_song = torch.zeros((self.longest_song, INPUT_FEATURES), dtype=torch.float)
-            padded_song[:len(song), :] = torch.tensor(song)
-            padded_songs.append(padded_song)
-        return padded_songs
-
-    def _create_sequences(self) -> Tuple[List[List[Tuple[float, float, float, float]]],
-                                         List[Tuple[float, float, float, float]]]:
-        inputs = []
-        outputs = []
-        for song in self.songs:
-            for i in range(0, len(song) - SEQUENCE_SIZE):
-                inputs.append(torch.tensor(song[i:i + SEQUENCE_SIZE]))
-                outputs.append(torch.tensor(song[i + SEQUENCE_SIZE]))
-        return inputs, outputs
-
-    def _update_longest_song(self, length: int) -> None:
-        """
-        Updates the longest song seen up to this moment.
-        :param length: Length of the current song
-        """
-        self.longest_song = max(length, self.longest_song)
-
-    def _read_song(self, f: File) -> List[List[float]]:
-        """
-        Reads the One-hot representations of the notes played at the same time step.
-        :param f: File object containing encoded notes for each time step in each row.
-        :return: Parsed list of One-hot encoded variables for each time step.
-        """
-        lines = f.readlines()
-        self._update_longest_song(len(lines))
-        return [MusicDataset._parse_features(l) for l in lines]
-
-    @staticmethod
-    def _parse_features(line: str) -> List[float]:
-        """
-        Parses the One-hot representations of the notes played at one time step.
-        :param line: Space separated one-hot representations of the notes.
-        :return: Parsed list of One-hot encoded variables at one time step.
-        """
-        return list(map(float, line.strip().split()))

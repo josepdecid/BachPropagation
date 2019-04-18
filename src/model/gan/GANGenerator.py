@@ -4,14 +4,14 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, TYPE_G, INPUT_FEATURES, MIN_FREQ_NOTE, MAX_FREQ_NOTE, \
+from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, TYPE_G, MIN_FREQ_NOTE, MAX_FREQ_NOTE, \
     MAX_VELOCITY
 from model.gan.RNN import RNN
 from utils.tensors import device
 
 
 class GANGenerator(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes: int):
         """
         **Generator** network of a GAN model.
         Applies a RNN to a random noise generator, and passes each hidden state through a Dense Layer.
@@ -20,13 +20,13 @@ class GANGenerator(nn.Module):
         super(GANGenerator, self).__init__()
 
         self.rnn = RNN(architecture=TYPE_G,
-                       inp_dim=INPUT_FEATURES,
+                       inp_dim=1,
                        hid_dim=HIDDEN_DIM_G,
                        layers=LAYERS_G,
                        bidirectional=BIDIRECTIONAL_G).to(device)
 
         self.dense_input_features = (2 if BIDIRECTIONAL_G else 1) * HIDDEN_DIM_G
-        self.dense_1 = nn.Linear(in_features=self.dense_input_features, out_features=INPUT_FEATURES)
+        self.dense_1 = nn.Linear(in_features=self.dense_input_features, out_features=num_classes)
 
     def forward(self, x, pretraining=False):
         out, (h_n, c_n) = self.rnn(x)
@@ -35,8 +35,7 @@ class GANGenerator(nn.Module):
             y = self.dense_1(y)
         else:
             y = self.dense_1(out)
-        y = F.relu(y)
-        return y
+        return F.softmax(y, dim=1)
 
     @staticmethod
     def noise(dims: Tuple):

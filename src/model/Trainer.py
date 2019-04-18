@@ -94,7 +94,7 @@ class Trainer:
         sum_loss_g = 0
         sum_loss_d = 0
 
-        batch_data = enumerate(self.loader)
+        batch_data = enumerate(tqdm(self.loader, desc=f'Epoch {epoch}: ', ncols=100))
         for batch_idx, (features, labels) in batch_data:
             features = features.to(device)
             labels = labels.to(device)
