@@ -15,6 +15,8 @@ from model.helpers.VisdomPlotter import VisdomPlotter
 from utils.tensors import device, zeros_target, ones_target
 from utils.typings import FloatTensor
 
+idx = 0
+
 
 class Trainer:
     def __init__(self, model: GANModel, dataset: MusicDataset):
@@ -96,6 +98,7 @@ class Trainer:
         sum_loss_d = 0
 
         batch_data = enumerate(tqdm(self.loader, desc=f'Pretraining Epoch {epoch}: ', ncols=100))
+        global idx
         for batch_idx, (features, _) in batch_data:
             features = features.to(device)
             batch_size = features.size(0)
@@ -107,7 +110,8 @@ class Trainer:
             #    d_loss = self._train_discriminator(real_data=features)
             #    sum_loss_d += d_loss * batch_size
 
-            EpochMetric(batch_idx * epoch, g_loss, 0, [[]]).plot_loss(self.vis, 'ETT', 'Loss')
+            EpochMetric(idx, g_loss, 0, [[]]).plot_loss(self.vis, 'ETT', 'Loss')
+            idx += 1
 
         g_loss = sum_loss_g / len(self.loader.dataset)
         d_loss = sum_loss_d / len(self.loader.dataset)
