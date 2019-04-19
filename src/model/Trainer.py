@@ -180,11 +180,12 @@ class Trainer:
         # Calculate gradients w.r.t parameters and backpropagate
         if pretraining:
             predictions = self.model.generator(noise_data, teacher_forcing=True, x_real=real_data)
-            loss = self.model.criterion(predictions.view(batch_size * SEQUENCE_LEN, -1),
-                                        real_data.view(batch_size * SEQUENCE_LEN).to(torch.long))
+            loss = self.model.pretrain_criterion(predictions.view(batch_size * SEQUENCE_LEN, -1),
+                                                 real_data.view(batch_size * SEQUENCE_LEN).to(torch.long))
         else:
-            fake_data = self.model.generator(noise_data)
-            loss = self.model.criterion(fake_data, ones_target((batch_size,)))
+            g_predictions = self.model.generator(noise_data)
+            d_predictions = self.model.discriminator(g_predictions)
+            loss = self.model.train_criterion(d_predictions, ones_target((batch_size,)))
 
         loss.backward()
 
@@ -214,14 +215,14 @@ class Trainer:
         real_predictions = self.model.discriminator(real_data)
 
         # Train on real data
-        real_loss = self.model.criterion(real_predictions, ones)
+        real_loss = self.model.pretrain_criterion(real_predictions, ones)
         real_loss.backward()
 
         # Train on fake data
         noise_data = GANGenerator.noise((batch_size, time_steps))
         fake_data = self.model.generator(noise_data).detach()
         fake_predictions = self.model.discriminator(fake_data)
-        fake_loss = self.model.criterion(fake_predictions, zeros)
+        fake_loss = self.model.pretrain_criterion(fake_predictions, zeros)
         fake_loss.backward()
 
         # Update parameters

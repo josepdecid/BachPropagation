@@ -23,7 +23,8 @@ class GANModel:
         self.d_optimizer: Optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=LR_D, weight_decay=L2_D)
         self.d_scheduler: Scheduler = ReduceLROnPlateau(self.d_optimizer, mode='min', patience=LR_PAT_D)
 
-        self.criterion: Criterion = nn.CrossEntropyLoss()
+        self.pretrain_criterion: Criterion = nn.CrossEntropyLoss()
+        self.train_criterion: Criterion = nn.BCELoss()
 
     def train_mode(self):
         self.generator.train()
