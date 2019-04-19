@@ -46,7 +46,8 @@ class GANGenerator(nn.Module):
         h = self.rnn.init_hidden(batch_size)  # h0
         c = self.rnn.init_hidden(batch_size)  # c0
 
-        outputs = torch.zeros(batch_size, SEQUENCE_LEN, self.num_classes)
+        g_outputs = torch.zeros(batch_size, SEQUENCE_LEN, self.num_classes)
+        d_inputs = torch.zeros(batch_size, SEQUENCE_LEN, 1)
 
         for i in range(SEQUENCE_LEN):
             x, (h, c) = self.rnn(x, (h, c))
@@ -58,9 +59,10 @@ class GANGenerator(nn.Module):
             else:
                 x = torch.argmax(y, dim=2, keepdim=True).to(torch.float)
 
-            outputs[:, i:i + 1, :] = y
+            g_outputs[:, i:i + 1, :] = y
+            d_inputs[:, i:i + 1] = x
 
-        return outputs
+        return g_outputs, d_inputs
 
     @staticmethod
     def noise(dims: Tuple):

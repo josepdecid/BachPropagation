@@ -70,8 +70,9 @@ class Trainer:
             metric.print_metrics()
 
             if epoch % SAMPLE_STEPS == 0:
-                sample = self.generate_sample(length=5000)
-                reconstruct_midi(title=f'Sample_{epoch}', raw_data=sample)
+                pass
+                # sample = self.generate_sample(length=5000)
+                # reconstruct_midi(title=f'Sample_{epoch}', raw_data=sample)
                 # TODO: Visdom doesn't accept MIDI files.
                 #  Should convert to WAV or find an alternative for visualization.
                 # if FLAGS['viz']:
@@ -179,12 +180,12 @@ class Trainer:
         # Forwards pass to get logits
         # Calculate gradients w.r.t parameters and backpropagate
         if pretraining:
-            predictions = self.model.generator(noise_data, teacher_forcing=True, x_real=real_data)
+            predictions, _ = self.model.generator(noise_data, teacher_forcing=True, x_real=real_data)
             loss = self.model.pretrain_criterion(predictions.view(batch_size * SEQUENCE_LEN, -1),
                                                  real_data.view(batch_size * SEQUENCE_LEN).to(torch.long))
         else:
-            g_predictions = self.model.generator(noise_data)
-            d_predictions = self.model.discriminator(g_predictions)
+            g_predictions, d_inputs = self.model.generator(noise_data)
+            d_predictions = self.model.discriminator(d_inputs)
             loss = self.model.train_criterion(d_predictions, ones_target((batch_size,)))
 
         loss.backward()

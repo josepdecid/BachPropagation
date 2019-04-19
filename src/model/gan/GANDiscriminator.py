@@ -17,7 +17,7 @@ class GANDiscriminator(nn.Module):
         super(GANDiscriminator, self).__init__()
 
         self.rnn = RNN(architecture=TYPE_D,
-                       inp_dim=INPUT_FEATURES,
+                       inp_dim=1,
                        hid_dim=HIDDEN_DIM_D,
                        layers=LAYERS_D,
                        bidirectional=BIDIRECTIONAL_D).to(device)
@@ -26,9 +26,11 @@ class GANDiscriminator(nn.Module):
         self.dense_1 = nn.Linear(in_features=dense_input_features, out_features=1)
 
     def forward(self, x):
-        x, _ = self.rnn(x, )
-        x = F.leaky_relu(x)
-        x = F.dropout(x)
+        batch_size = x.size(0)
+
+        h = self.rnn.init_hidden(batch_size)  # h0
+        c = self.rnn.init_hidden(batch_size)  # c0
+        x, _ = self.rnn(x, (h, c))
 
         x = self.dense_1(x)
         x = torch.sigmoid(x)
