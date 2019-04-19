@@ -1,4 +1,7 @@
+import torch
 from torch import nn
+
+from utils.tensors import device
 
 
 class RNN(nn.Module):
@@ -18,6 +21,9 @@ class RNN(nn.Module):
         gated_rnn = nn.LSTM if architecture == 'LSTM' else nn.GRU
         dropout = 0.5 if layers > 1 else 0
 
+        self.hid_dim = hid_dim
+        self.layers = layers
+        self.directions = 2 if bidirectional else 1
         self.rnn = gated_rnn(input_size=inp_dim,
                              hidden_size=hid_dim,
                              num_layers=layers,
@@ -25,5 +31,8 @@ class RNN(nn.Module):
                              batch_first=True,
                              bidirectional=bidirectional)
 
-    def forward(self, x):
-        return self.rnn(x)
+    def forward(self, x, h_c):
+        return self.rnn(x, h_c)
+
+    def init_hidden(self, batch_size):
+        return torch.zeros(self.layers * self.directions, batch_size, self.hid_dim, device=device)

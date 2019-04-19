@@ -4,10 +4,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, TYPE_G, MIN_FREQ_NOTE, MAX_FREQ_NOTE, \
-    MAX_VELOCITY
+from constants import HIDDEN_DIM_G, LAYERS_G, BIDIRECTIONAL_G, TYPE_G, SEQUENCE_LEN
 from model.gan.RNN import RNN
 from utils.tensors import device
+from utils.typings import FloatTensor
 
 
 class GANGenerator(nn.Module):
@@ -25,17 +25,42 @@ class GANGenerator(nn.Module):
                        layers=LAYERS_G,
                        bidirectional=BIDIRECTIONAL_G).to(device)
 
+        self.num_classes = num_classes
         self.dense_input_features = (2 if BIDIRECTIONAL_G else 1) * HIDDEN_DIM_G
-        self.dense_1 = nn.Linear(in_features=self.dense_input_features, out_features=num_classes)
+        self.dense = nn.Linear(in_features=self.dense_input_features, out_features=num_classes)
 
-    def forward(self, x, pretraining=False):
-        out, (h_n, c_n) = self.rnn(x)
-        if pretraining:
-            y = h_n[(-2 if BIDIRECTIONAL_G else -1):].view(-1, self.dense_input_features)
-            y = self.dense_1(y)
-        else:
-            y = self.dense_1(out)
-        return F.softmax(y, dim=1)
+    def forward(self, x_noise: FloatTensor, teacher_forcing=False, x_real=None):
+        """
+        Receives random noise as input and
+        :param x_noise: x_0 (Noise data).
+        :param teacher_forcing: Use real target outputs as each next input.
+        :param x_real: Real data required if teacher_forcing == True.
+        :return:
+        """
+        assert not teacher_forcing or x_real is not None, \
+            'While using TeacherForcing, `x_real` must be feed with the real sequence data.'
+
+        batch_size = x_noise.size(0)
+
+        x = x_noise.view(batch_size, 1, 1)
+        h = self.rnn.init_hidden(batch_size)  # h0
+        c = self.rnn.init_hidden(batch_size)  # c0
+
+        outputs = torch.zeros(batch_size, SEQUENCE_LEN, self.num_classes)
+
+        for i in range(SEQUENCE_LEN):
+            x, (h, c) = self.rnn(x, (h, c))
+            y = self.dense(x)
+            y = F.softmax(y)
+
+            if teacher_forcing:
+                x = x_real[:, i:i + 1, :]
+            else:
+                x = torch.argmax(y, dim=2, keepdim=True).to(torch.float)
+
+            outputs[:, i:i + 1, :] = y
+
+        return outputs
 
     @staticmethod
     def noise(dims: Tuple):
@@ -43,8 +68,4 @@ class GANGenerator(nn.Module):
         Generates a 2-d vector of uniform sampled random values.
         :param dims: Tuple with the dimensions of the data.
         """
-        notes = (MIN_FREQ_NOTE - MAX_FREQ_NOTE) * torch.rand(dims) + MAX_FREQ_NOTE
-        velocity = MAX_VELOCITY * torch.rand(dims)
-        duration = torch.tensor(100) * torch.rand(dims)
-        since_previous = torch.tensor(100) * torch.rand(dims)
-        return torch.stack((notes, velocity, duration, since_previous), dim=2).to(device)
+        return torch.randn(dims, device=device)

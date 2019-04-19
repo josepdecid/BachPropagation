@@ -111,10 +111,3 @@ def reconstruct_midi(title: str, raw_data: NDArray) -> str:
 
     csv_data = series_to_csv(title=title, data=raw_data)
     return store_csv_to_midi(title=title, csv_data=csv_data)
-
-
-with open(f'{DATASET_PATH}/ff1gameover.txt') as f:
-    data = f.read()
-    data = data.strip().split('\n')
-    data = list(map(lambda x: (float(x.split()[0]), float(x.split()[1]), int(x.split()[2]), int(x.split()[3])), data))
-    reconstruct_midi('EXAMPLEEEEE', data)
