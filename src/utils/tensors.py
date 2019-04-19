@@ -8,8 +8,8 @@ device = dev('cuda' if use_cuda else 'cpu')
 
 
 def zeros_target(dims: Tuple):
-    return torch.zeros(size=dims).to(device)
+    return torch.zeros(size=dims, device=device)
 
 
 def ones_target(dims: Tuple):
-    return torch.ones(size=dims).to(device)
+    return torch.ones(size=dims, device=device)

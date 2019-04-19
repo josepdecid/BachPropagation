@@ -8,7 +8,6 @@ from tqdm import tqdm
 from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D, \
     T_LOSS_BALANCER, SEQUENCE_LEN
 from dataset.MusicDataset import MusicDataset
-from dataset.preprocessing.reconstructor import reconstruct_midi
 from model.gan.GANGenerator import GANGenerator
 from model.gan.GANModel import GANModel
 from model.helpers.EpochMetric import EpochMetric
@@ -131,14 +130,14 @@ class Trainer:
             features = features.to(device)
             batch_size = features.size(0)
 
-            # if current_loss_d >= T_LOSS_BALANCER * current_loss_g:
-            #     d_loss, t_pos, t_neg = self._train_discriminator(real_data=features)
-            #     current_loss_d = d_loss
-            #     sum_loss_d += d_loss * batch_size
-            #     sum_t_pos += t_pos
-            #     sum_t_neg += t_neg
-            # else:
-            #     logging.debug('Freezing Discriminator')
+            if current_loss_d >= T_LOSS_BALANCER * current_loss_g:
+                d_loss, t_pos, t_neg = self._train_discriminator(real_data=features)
+                current_loss_d = d_loss
+                sum_loss_d += d_loss * batch_size
+                sum_t_pos += t_pos
+                sum_t_neg += t_neg
+            else:
+                logging.debug('Freezing Discriminator')
 
             if current_loss_g >= T_LOSS_BALANCER * current_loss_d:
                 g_loss = self._train_generator(real_data=features)
@@ -184,7 +183,7 @@ class Trainer:
             loss = self.model.pretrain_criterion(predictions.view(batch_size * SEQUENCE_LEN, -1),
                                                  real_data.view(batch_size * SEQUENCE_LEN).to(torch.long))
         else:
-            g_predictions, d_inputs = self.model.generator(noise_data)
+            _, d_inputs = self.model.generator(noise_data)
             d_predictions = self.model.discriminator(d_inputs)
             loss = self.model.train_criterion(d_predictions, ones_target((batch_size,)))
 
@@ -204,7 +203,6 @@ class Trainer:
         logging.debug('Training Discriminator')
 
         batch_size = real_data.size(0)
-        time_steps = real_data.size(1)
 
         zeros = zeros_target((batch_size,))
         ones = ones_target((batch_size,))
@@ -216,14 +214,15 @@ class Trainer:
         real_predictions = self.model.discriminator(real_data)
 
         # Train on real data
-        real_loss = self.model.pretrain_criterion(real_predictions, ones)
+        real_loss = self.model.train_criterion(real_predictions, ones)
         real_loss.backward()
 
         # Train on fake data
-        noise_data = GANGenerator.noise((batch_size, time_steps))
-        fake_data = self.model.generator(noise_data).detach()
-        fake_predictions = self.model.discriminator(fake_data)
-        fake_loss = self.model.pretrain_criterion(fake_predictions, zeros)
+        noise_data = GANGenerator.noise((batch_size, 1))
+        g_outputs, d_inputs = self.model.generator(noise_data)
+        g_outputs.detach(), d_inputs.detach()
+        fake_predictions = self.model.discriminator(d_inputs)
+        fake_loss = self.model.train_criterion(fake_predictions, zeros)
         fake_loss.backward()
 
         # Update parameters

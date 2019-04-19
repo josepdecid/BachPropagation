@@ -52,7 +52,7 @@ class GANGenerator(nn.Module):
         for i in range(SEQUENCE_LEN):
             x, (h, c) = self.rnn(x, (h, c))
             y = self.dense(x)
-            y = F.softmax(y)
+            y = F.softmax(y, dim=2)
 
             if teacher_forcing:
                 x = x_real[:, i:i + 1, :]
