@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 
 from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D, \
-    T_LOSS_BALANCER, SEQUENCE_LEN
+    T_LOSS_BALANCER, SEQUENCE_LEN, F_GAN
 from dataset.MusicDataset import MusicDataset
 from model.gan.GANGenerator import GANGenerator
 from model.gan.GANModel import GANModel
@@ -130,21 +130,21 @@ class Trainer:
             features = features.to(device)
             batch_size = features.size(0)
 
-            if current_loss_d >= T_LOSS_BALANCER * current_loss_g:
+            if F_GAN and current_loss_d < T_LOSS_BALANCER * current_loss_g:
+                logging.debug('Freezing Discriminator')
+            else:
                 d_loss, t_pos, t_neg = self._train_discriminator(real_data=features)
                 current_loss_d = d_loss
                 sum_loss_d += d_loss * batch_size
                 sum_t_pos += t_pos
                 sum_t_neg += t_neg
-            else:
-                logging.debug('Freezing Discriminator')
 
-            if current_loss_g >= T_LOSS_BALANCER * current_loss_d:
+            if F_GAN and current_loss_g < T_LOSS_BALANCER * current_loss_d:
+                logging.debug('Freezing Generator')
+            else:
                 g_loss = self._train_generator(real_data=features)
                 current_loss_g = g_loss
                 sum_loss_g += g_loss * batch_size
-            else:
-                logging.debug('Freezing Generator')
 
         len_data = len(self.loader.dataset)
         sum_loss_g /= len_data
