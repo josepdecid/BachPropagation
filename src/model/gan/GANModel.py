@@ -16,15 +16,16 @@ class GANModel:
         logging.info('Creating GAN model...')
 
         self.generator: NNet = GANGenerator(num_classes).to(device)
+        self.g_pre_optimizer: Optimizer = torch.optim.RMSprop(self.generator.parameters(), lr=LR_G)
         self.g_optimizer: Optimizer = torch.optim.Adam(self.generator.parameters(), lr=LR_G, weight_decay=L2_G)
-        self.g_scheduler: Scheduler = ReduceLROnPlateau(self.g_optimizer, mode='min', patience=LR_PAT_G)
+        # self.g_scheduler: Scheduler = ReduceLROnPlateau(self.g_optimizer, mode='min', patience=LR_PAT_G)
 
         self.discriminator: NNet = GANDiscriminator().to(device)
         self.d_optimizer: Optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=LR_D, weight_decay=L2_D)
-        self.d_scheduler: Scheduler = ReduceLROnPlateau(self.d_optimizer, mode='min', patience=LR_PAT_D)
+        # self.d_scheduler: Scheduler = ReduceLROnPlateau(self.d_optimizer, mode='min', patience=LR_PAT_D)
 
-        self.pretrain_criterion: Criterion = nn.CrossEntropyLoss()
-        self.train_criterion: Criterion = nn.BCELoss()
+        self.cross_entropy_crit: Criterion = nn.CrossEntropyLoss()
+        self.binary_cross_entropy_crit: Criterion = nn.BCELoss()
 
     def train_mode(self):
         self.generator.train()

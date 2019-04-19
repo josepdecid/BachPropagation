@@ -46,7 +46,7 @@ class MusicDataset(Dataset):
             self.network_output.append(note2idx[sequence_out])
 
         self.vocab_size = len(set(self.notes))
-        self.network_input = torch.tensor(self.network_input, dtype=torch.float) / float(self.vocab_size)
+        self.network_input = torch.tensor(self.network_input, dtype=torch.float)
         self.network_input = np.reshape(self.network_input, newshape=(-1, SEQUENCE_LEN, 1))
 
         # self.padded_songs = self._apply_padding()

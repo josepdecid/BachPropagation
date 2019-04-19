@@ -5,7 +5,7 @@ from typing import List, Tuple
 import torch
 from tqdm import tqdm
 
-from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, PRETRAIN_D, \
+from constants import EPOCHS, CKPT_STEPS, CHECKPOINTS_PATH, SAMPLE_STEPS, FLAGS, PLOT_COL, PRETRAIN_G, \
     T_LOSS_BALANCER, SEQUENCE_LEN, F_GAN
 from dataset.MusicDataset import MusicDataset
 from model.gan.GANGenerator import GANGenerator
@@ -41,16 +41,18 @@ class Trainer:
         logging.info(f'Discriminator model {self.model.discriminator}')
 
         # PRE-TRAINING
-        epochs_pretraining = max(PRETRAIN_G, PRETRAIN_D)
-        for epoch in range(1, epochs_pretraining + 1):
-            metric = self._pretrain_epoch(epoch)
+        if PRETRAIN_G > 0:
+            print('Pretraining Generator...')
 
-            if FLAGS['viz']:
-                metric.plot_loss(self.vis, plot='Pretraining', title='Pretraining Loss')
-            metric.print_metrics()
+            for epoch in range(1, PRETRAIN_G + 1):
+                metric = self._pretrain_epoch(epoch)
 
-        # sample = generate_sample(model=self.model, length=500)
-        # reconstruct_midi(title=f'Sample_test', raw_data=sample)
+                if FLAGS['viz']:
+                    metric.plot_loss(self.vis, plot='Pretraining', title='Pretraining Loss')
+                metric.print_metrics()
+
+            # sample = generate_sample(model=self.model, length=500)
+            # reconstruct_midi(title=f'Sample_test', raw_data=sample)
 
         current_loss_d = 1e99
         current_loss_g = 1e99
@@ -93,24 +95,22 @@ class Trainer:
         sum_loss_g = 0
         sum_loss_d = 0
 
-        batch_data = enumerate(tqdm(self.loader, desc=f'Epoch {epoch}: ', ncols=100))
-        for batch_idx, (features, labels) in batch_data:
+        batch_data = enumerate(tqdm(self.loader, desc=f'Pretraining Epoch {epoch}: ', ncols=100))
+        for batch_idx, (features, _) in batch_data:
             features = features.to(device)
-            labels = labels.to(device)
             batch_size = features.size(0)
 
-            if epoch < PRETRAIN_G:
-                g_loss = self._train_generator(real_data=features, pretraining_labels=labels)
-                sum_loss_g += g_loss * batch_size
+            g_loss = self._train_generator(real_data=features, pretraining=True)
+            sum_loss_g += g_loss * batch_size
 
             # if epoch < PRETRAIN_D:
             #    d_loss = self._train_discriminator(real_data=features)
             #    sum_loss_d += d_loss * batch_size
 
+            EpochMetric(batch_idx * epoch, g_loss, 0, [[]]).plot_loss(self.vis, 'ETT', 'Loss')
+
         g_loss = sum_loss_g / len(self.loader.dataset)
         d_loss = sum_loss_d / len(self.loader.dataset)
-
-        self.model.g_scheduler.step(metrics=g_loss)
 
         return EpochMetric(epoch, g_loss, d_loss, None)
 
@@ -157,40 +157,49 @@ class Trainer:
 
         return EpochMetric(epoch, sum_loss_g, sum_loss_d, confusion_matrix)
 
-    def _train_generator(self, real_data, pretraining_labels=None) -> float:
+    def _train_generator(self, real_data, pretraining=False) -> float:
         """
         Train GAN Generator performing an optimizer step.
         :param real_data: Real inputs from the dataset
-        :param pretraining_labels: Boolean indicating whether it's pretraining or training.
+        :param pretraining: Boolean indicating whether it's pretraining or training.
         :return: Discriminator loss from the specified criterion.
         """
-        pretraining = pretraining_labels is not None
         if pretraining:
-            logging.debug('Training Generator')
-        else:
             logging.debug('Pretraining Generator')
+        else:
+            logging.debug('Training Generator')
 
         batch_size = real_data.size(0)
         noise_data = GANGenerator.noise((batch_size, 1))
 
-        # Reset gradients
-        self.model.g_optimizer.zero_grad()
-
-        # Forwards pass to get logits
         # Calculate gradients w.r.t parameters and backpropagate
         if pretraining:
-            predictions, _ = self.model.generator(noise_data, teacher_forcing=True, x_real=real_data)
-            loss = self.model.pretrain_criterion(predictions.view(batch_size * SEQUENCE_LEN, -1),
-                                                 real_data.view(batch_size * SEQUENCE_LEN).to(torch.long))
+            # Reset gradients
+            self.model.g_pre_optimizer.zero_grad()
+
+            # Generator output
+            g_outputs, _ = self.model.generator(noise_data, teacher_forcing=True, x_real=real_data)
+
+            # Calculate CrossEntropyLoss
+            pred_labels = g_outputs.view(batch_size * SEQUENCE_LEN, -1)
+            target_real = real_data.view(batch_size * SEQUENCE_LEN).to(torch.long)
+            loss = self.model.cross_entropy_crit(pred_labels, target_real)
+            loss.backward()
+
+            # Optimize using RMSProp
+            self.model.g_pre_optimizer.step()
         else:
+            # Reset gradients
+            self.model.g_optimizer.zero_grad()
+
             _, d_inputs = self.model.generator(noise_data)
             d_predictions = self.model.discriminator(d_inputs)
-            loss = self.model.train_criterion(d_predictions, ones_target((batch_size,)))
+            loss = self.model.binary_cross_entropy_crit(d_predictions, ones_target((batch_size,)))
+            loss.backward()
 
-        loss.backward()
-
-        # Update parameters
-        self.model.g_optimizer.step()
+            # Run trainer optimizer
+            loss.backward()
+            self.model.g_optimizer.step()
 
         return loss.item()
 
@@ -214,7 +223,7 @@ class Trainer:
         real_predictions = self.model.discriminator(real_data)
 
         # Train on real data
-        real_loss = self.model.train_criterion(real_predictions, ones)
+        real_loss = self.model.binary_cross_entropy_crit(real_predictions, ones)
         real_loss.backward()
 
         # Train on fake data
@@ -222,7 +231,7 @@ class Trainer:
         g_outputs, d_inputs = self.model.generator(noise_data)
         g_outputs.detach(), d_inputs.detach()
         fake_predictions = self.model.discriminator(d_inputs)
-        fake_loss = self.model.train_criterion(fake_predictions, zeros)
+        fake_loss = self.model.binary_cross_entropy_crit(fake_predictions, zeros)
         fake_loss.backward()
 
         # Update parameters
