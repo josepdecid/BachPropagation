@@ -46,8 +46,8 @@ class GANGenerator(nn.Module):
         h = self.rnn.init_hidden(batch_size)  # h0
         c = self.rnn.init_hidden(batch_size)  # c0
 
-        g_outputs = torch.zeros(batch_size, SEQUENCE_LEN, self.num_classes)
-        d_inputs = torch.zeros(batch_size, SEQUENCE_LEN, 1)
+        g_outputs = torch.zeros(batch_size, SEQUENCE_LEN, self.num_classes, device=device)
+        d_inputs = torch.zeros(batch_size, SEQUENCE_LEN, 1, device=device)
 
         for i in range(SEQUENCE_LEN):
             x, (h, c) = self.rnn(x, (h, c))
