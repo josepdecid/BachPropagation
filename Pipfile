@@ -8,6 +8,7 @@ visdom = "*"
 matplotlib = "*"
 
 [packages]
+urllib3 = ">=1.24.2"
 py-midicsv = "*"
 beautifulsoup4 = "*"
 tqdm = "*"
